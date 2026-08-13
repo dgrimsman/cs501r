@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Noncooperative Game Theory — Interactive Demos</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg: #FFFFFF;
+    --panel: #1D3326;
+    --panel-2: #16261C;
+    --sage: #93C670;
+    --sage-dim: #B9DA9E;
+    --cream: #F4F6DE;
+    --text: #F2F7ED;
+    --text-dim: #9DBB94;
+    --text-on-cream: #16261C;
+    --p1: #D9A441;
+    --p2: #4FA88A;
+    --gold: #F0C55C;
+    --border: rgba(157,187,148,0.14);
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text-on-cream);
+    font-family: 'Poppins', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- hero (title-slide look) ---------- */
+  .hero{
+    position: relative;
+    background: var(--sage);
+    overflow: hidden;
+    padding: 90px 24px 100px;
+    text-align: center;
+  }
+  .hero::before{
+    content:"";
+    position:absolute; inset:0;
+    background:
+      linear-gradient(rgba(255,255,255,0.18) 1px, transparent 1px) 0 0/44px 44px,
+      linear-gradient(90deg, rgba(255,255,255,0.18) 1px, transparent 1px) 0 0/44px 44px;
+    opacity: 0.5;
+  }
+  .hero-dots{ position:absolute; inset:0; pointer-events:none; }
+  .hero h1{
+    position: relative;
+    font-family:'Poppins',sans-serif; font-weight:800;
+    font-size: clamp(30px, 5vw, 48px);
+    color:#FFFFFF; margin: 0 0 14px; letter-spacing:-0.01em;
+    text-shadow: 0 2px 18px rgba(22,38,28,0.15);
+  }
+  .hero p{
+    position: relative;
+    font-size: 16px; color: rgba(255,255,255,0.92); max-width: 620px; margin: 0 auto;
+    line-height: 1.6;
+  }
+  .hero .eyebrow{
+    position: relative;
+    font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.16em; text-transform:uppercase;
+    color: rgba(255,255,255,0.85); margin-bottom: 14px; display:inline-block;
+  }
+
+  /* ---------- content ---------- */
+  .wrap{ max-width: 980px; margin: -50px auto 60px; padding: 0 20px; position:relative; }
+
+  .intro-card{
+    background: var(--cream); color: var(--text-on-cream);
+    border-radius: 16px; padding: 22px 26px; margin-bottom: 34px;
+    box-shadow: 0 14px 40px rgba(22,38,28,0.14);
+  }
+  .intro-card b{ font-weight:700; }
+  .intro-card .ptitle{
+    font-weight:700; font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:8px;
+  }
+  .intro-card p{ margin:0; font-size:14px; line-height:1.6; }
+
+  .lecture{
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border-radius: 18px;
+    padding: 26px 28px 22px;
+    margin-bottom: 22px;
+    color: var(--text);
+    box-shadow: 0 14px 34px rgba(22,38,28,0.16);
+    overflow: hidden;
+    position: relative;
+  }
+  .lecture .lnum{
+    font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:0.14em; text-transform:uppercase;
+    color: var(--sage-dim); margin: 0 0 6px;
+  }
+  .lecture h2{
+    font-family:'Poppins',sans-serif; font-weight:700; font-size:22px; margin: 0 0 16px; color:#FFFFFF;
+  }
+  .demo-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .demo-card{
+    display:block; text-decoration:none; color: inherit;
+    background: rgba(255,255,255,0.06); border:1px solid var(--border); border-radius: 12px;
+    padding: 16px 18px; transition: background .15s ease, transform .15s ease;
+  }
+  .demo-card:hover{ background: rgba(255,255,255,0.12); transform: translateY(-2px); }
+  .demo-card .dtitle{
+    font-family:'Poppins',sans-serif; font-weight:600; font-size:15px; margin-bottom:4px;
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+  }
+  .demo-card .dtitle .arrow{ color: var(--gold); transition: transform .15s ease; }
+  .demo-card:hover .dtitle .arrow{ transform: translateX(3px); }
+  .demo-card .ddesc{ font-size:12.5px; color: var(--text-dim); line-height:1.5; }
+
+  .stripe{
+    height: 30px;
+    background:
+      radial-gradient(circle at 12% 50%, rgba(200,150,80,0.55) 0 5px, transparent 6px),
+      radial-gradient(circle at 28% 40%, rgba(140,190,110,0.55) 0 4px, transparent 5px),
+      radial-gradient(circle at 46% 60%, rgba(200,150,80,0.5) 0 3px, transparent 4px),
+      radial-gradient(circle at 63% 35%, rgba(140,190,110,0.6) 0 5px, transparent 6px),
+      radial-gradient(circle at 80% 55%, rgba(200,150,80,0.5) 0 4px, transparent 5px),
+      radial-gradient(circle at 93% 40%, rgba(140,190,110,0.55) 0 3px, transparent 4px),
+      var(--sage);
+    border-radius: 0 0 18px 18px;
+    margin-top: -18px;
+  }
+  .lecture-wrap{ border-radius: 18px; overflow:hidden; margin-bottom: 22px; box-shadow: 0 14px 34px rgba(22,38,28,0.16); }
+  .lecture-wrap .lecture{ margin-bottom:0; box-shadow:none; border-radius: 18px 18px 0 0; }
+  .lecture-wrap .stripe{ margin-top:0; border-radius:0 0 18px 18px; }
+
+  footer{ text-align:center; padding: 10px 20px 50px; color:#6E8A64; font-size:12.5px; font-family:'IBM Plex Mono',monospace; }
+</style>
+</head>
+<body>
+
+  <div class="hero">
+    <span class="eyebrow">Interactive Course Companion</span>
+    <h1>Noncooperative Game Theory</h1>
+    <p>Hands-on demos to go with lecture — pull them up in class or explore them on your own. Drag sliders, run simulations, and edit the math directly.</p>
+  </div>
+
+  <div class="wrap">
+
+    <div class="intro-card">
+      <div class="ptitle">💡 How to use these</div>
+      <p>Each tool mirrors a specific example from lecture — the sliders and starting values match what's on the slides, so you can follow along in real time or revisit them later to build intuition at your own pace.</p>
+    </div>
+
+    <div class="lecture-wrap">
+      <div class="lecture">
+        <p class="lnum">Lecture 2</p>
+        <h2>Noncooperative Games and Policies</h2>
+        <div class="demo-grid">
+          <a class="demo-card" href="lecture-2/rope-pulling.html">
+            <div class="dtitle">Rope Pulling <span class="arrow">→</span></div>
+            <div class="ddesc">Set each player's force, angle, and cost function; watch the mass accelerate to see who "wins."</div>
+          </a>
+          <a class="demo-card" href="lecture-2/war-of-attrition.html">
+            <div class="dtitle">War of Attrition <span class="arrow">→</span></div>
+            <div class="ddesc">Deterministic or randomized concession policies, played out stage by stage with running costs.</div>
+          </a>
+          <a class="demo-card" href="lecture-2/zebra-lake.html">
+            <div class="dtitle">Zebra in the Lake <span class="arrow">→</span></div>
+            <div class="ddesc">Draw an escape path, control it live, or watch the analytically optimal pursuit strategy.</div>
+          </a>
+        </div>
+      </div>
+      <div class="stripe"></div>
+    </div>
+
+    <div class="lecture-wrap">
+      <div class="lecture">
+        <p class="lnum">Lecture 4</p>
+        <h2>Mixed Policies</h2>
+        <div class="demo-grid">
+          <a class="demo-card" href="lecture-4/rps-equilibrium.html">
+            <div class="dtitle">Rock-Paper-Scissors Equilibrium <span class="arrow">→</span></div>
+            <div class="ddesc">Edit any payoff matrix and see the mixed saddle-point equilibrium and game value update live.</div>
+          </a>
+        </div>
+      </div>
+      <div class="stripe"></div>
+    </div>
+
+    <div class="lecture-wrap">
+      <div class="lecture">
+        <p class="lnum">Lecture 7</p>
+        <h2>Potential Games</h2>
+        <div class="demo-grid">
+          <a class="demo-card" href="lecture-7/potential-game-minima.html">
+            <div class="dtitle">Global, Local &amp; Directional-Local Minima <span class="arrow">→</span></div>
+            <div class="ddesc">Rotate a 3D potential surface and see exactly why a Nash equilibrium need not be a true local minimum.</div>
+          </a>
+        </div>
+      </div>
+      <div class="stripe"></div>
+    </div>
+
+  </div>
+
+  <footer>built for lecture &middot; updated as the semester goes</footer>
+
+</body>
+</html>

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rock-Paper-Scissors — Mixed Policies</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg: #FFFFFF;
+    --panel: #1D3326;
+    --panel-2: #16261C;
+    --sage: #93C670;
+    --cream: #F4F6DE;
+    --text-on-cream: #16261C;
+    --grid: rgba(140,180,130,0.14);
+    --border: rgba(157,187,148,0.14);
+    --text: #F2F7ED;
+    --text-dim: #9DBB94;
+    --p1: #D9A441;
+    --p1-dim: rgba(217,164,65,0.18);
+    --p2: #4FA88A;
+    --p2-dim: rgba(79,168,138,0.18);
+    --gold: #F0C55C;
+    --gold-dim: rgba(240,197,92,0.14);
+    --focus: #F0C55C;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text-on-cream);
+    font-family: 'Poppins', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .slide-frame{
+    max-width: 1180px;
+    margin: 28px auto 48px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 18px 50px rgba(29,51,38,0.25);
+    color: var(--text);
+  }
+  .slide-frame-inner{ padding: 34px 32px 26px; }
+  .slide-stripe{
+    height: 26px;
+    background:
+      radial-gradient(circle at 12% 50%, rgba(200,150,80,0.55) 0 5px, transparent 6px),
+      radial-gradient(circle at 28% 40%, rgba(140,190,110,0.55) 0 4px, transparent 5px),
+      radial-gradient(circle at 46% 60%, rgba(200,150,80,0.5) 0 3px, transparent 4px),
+      radial-gradient(circle at 63% 35%, rgba(140,190,110,0.6) 0 5px, transparent 6px),
+      radial-gradient(circle at 80% 55%, rgba(200,150,80,0.5) 0 4px, transparent 5px),
+      radial-gradient(circle at 93% 40%, rgba(140,190,110,0.55) 0 3px, transparent 4px),
+      var(--sage);
+  }
+  .app{ max-width: 920px; margin: 0 auto; padding: 28px 20px 48px; }
+  header{ margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+  .eyebrow{ font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); margin: 0 0 8px; }
+  h1{ font-family: 'Poppins', sans-serif; font-size: 30px; font-weight: 700; margin: 0 0 10px; letter-spacing: -0.01em; }
+  header p{ max-width: 760px; color: var(--text-dim); font-size: 14.5px; line-height: 1.55; margin: 0; }
+  header p strong{ color: var(--text); font-weight: 600; }
+  code.f{ font-family:'IBM Plex Mono',monospace; background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius:4px; }
+
+  .presets{ display:flex; gap:8px; margin-bottom: 18px; flex-wrap: wrap; }
+  button{ font-family:'Poppins',sans-serif; font-weight:600; font-size:12.5px; border-radius:7px; border:1px solid var(--border); background: rgba(255,255,255,0.04); color: var(--text-dim); padding: 9px 13px; cursor:pointer; transition: background .15s ease, color .15s ease; }
+  button:hover{ background: rgba(255,255,255,0.09); color: var(--text); }
+  button:focus-visible{ outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .panel{ background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 10px; padding: 26px; }
+
+  table.matrix{ border-collapse: separate; border-spacing: 7px; margin: 0 auto; }
+  table.matrix th, table.matrix td{ text-align:center; padding: 0; }
+  table.matrix th{ font-family:'Poppins',sans-serif; font-weight:700; font-size: 14px; }
+  th.colhead{ color: var(--p2); background: var(--p2-dim); border-radius: 7px; height: 34px; width: 78px; }
+  th.rowhead{ color: var(--p1); background: var(--p1-dim); border-radius: 7px; width: 34px; }
+  th.corner{ background: transparent; }
+  th.axislabel{ font-family:'IBM Plex Mono',monospace; font-size: 12px; font-weight:600; font-style:italic; }
+  th.axislabel.xstar{ color: var(--p1); }
+  th.axislabel.ystar{ color: var(--p2); }
+
+  table.matrix input{
+    width: 78px; height: 48px; text-align:center;
+    background: rgba(0,0,0,0.28); color: var(--text);
+    border: 1px solid var(--border); border-radius: 7px;
+    font-family:'IBM Plex Mono',monospace; font-size: 15px;
+  }
+  table.matrix input:focus-visible{ outline: 2px solid var(--focus); outline-offset: 1px; }
+
+  .probcell{
+    width: 78px; min-height: 48px; border-radius: 7px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+    padding: 7px 4px;
+    border: 1px solid transparent; transition: background-color .2s ease;
+  }
+  .probcell .pnum{ font-family:'IBM Plex Mono',monospace; font-size: 13.5px; font-weight:700; }
+  .rowprob .pnum{ color: var(--p1); }
+  .colprob .pnum{ color: var(--p2); }
+  .pbar-track{ width: 56px; height: 6px; background: rgba(255,255,255,0.09); border-radius: 4px; overflow:hidden; }
+  .pbar-fill{ height:100%; border-radius:4px; width:0%; transition: width .25s ease; }
+  .rowprob .pbar-fill{ background: linear-gradient(90deg, rgba(217,164,65,0.6), var(--p1)); }
+  .colprob .pbar-fill{ background: linear-gradient(90deg, rgba(79,168,138,0.6), var(--p2)); }
+
+  .valuecell{
+    width: 78px; min-height: 48px; border-radius: 8px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    background: radial-gradient(circle at 50% 30%, rgba(240,197,92,0.4), rgba(240,197,92,0.18));
+    border: 2px solid var(--gold);
+    box-shadow: 0 0 0 3px rgba(240,197,92,0.12), 0 0 16px rgba(240,197,92,0.4);
+  }
+  .valuecell .vlabel{ font-family:'IBM Plex Mono',monospace; font-size: 8px; letter-spacing:0.09em; text-transform:uppercase; color: #16261C; opacity:0.75; font-weight:700; }
+  .valuecell .vnum{ font-family:'Poppins',sans-serif; font-size: 19px; font-weight:800; color: #16261C; }
+
+  .type-banner{
+    font-family:'Poppins',sans-serif; font-size:13.5px; font-weight:600;
+    padding: 12px 16px; border-radius: 8px; background: rgba(240,197,92,0.08);
+    border: 1px solid rgba(240,197,92,0.3); color: var(--gold);
+    margin-top: 22px; text-align:center;
+  }
+
+  .caption{ font-family:'IBM Plex Mono',monospace; font-size: 10.5px; color: var(--text-dim); margin-top: 14px; line-height:1.6; opacity: 0.8; text-align:center; }
+  .caption b{ color: var(--p1); } .caption b.y{ color: var(--p2); } .caption b.g{ color: var(--gold); }
+</style>
+</head>
+<body>
+<div class="slide-frame">
+  <div class="slide-frame-inner">
+
+  <header>
+    <p class="eyebrow">Lecture 4 &middot; Mixed Policies — Interactive Demo</p>
+    <h1>Rock-Paper-Scissors: Mixed Strategy Equilibrium</h1>
+    <p>Player 1 (rows) picks a row to <strong>minimize</strong> the payoff below; Player 2 (columns) picks a column to
+      <strong>maximize</strong> it — a zero-sum game. Edit any entry of the matrix and the mixed saddle-point equilibrium
+      (x*, y*) and game value <code class="f">v = x*&#7488;Ay*</code> update instantly.</p>
+  </header>
+
+  <div class="presets">
+    <button id="presetClassic">Load classic RPS (symmetric)</button>
+    <button id="presetRedux">Load RPS redux (asymmetric payoffs)</button>
+  </div>
+
+  <div class="panel">
+    <table class="matrix" id="matrixTable">
+      <tr>
+        <th class="corner"></th>
+        <th class="colhead">R</th>
+        <th class="colhead">P</th>
+        <th class="colhead">S</th>
+        <th class="axislabel xstar">x*</th>
+      </tr>
+      <tr>
+        <th class="rowhead">R</th>
+        <td><input type="number" step="0.5" data-i="0" data-j="0" value="0"></td>
+        <td><input type="number" step="0.5" data-i="0" data-j="1" value="1"></td>
+        <td><input type="number" step="0.5" data-i="0" data-j="2" value="-1"></td>
+        <td><div class="probcell rowprob" id="x0cell"><span class="pnum" id="x0num">&mdash;</span><div class="pbar-track"><div class="pbar-fill" id="x0bar"></div></div></div></td>
+      </tr>
+      <tr>
+        <th class="rowhead">P</th>
+        <td><input type="number" step="0.5" data-i="1" data-j="0" value="-1"></td>
+        <td><input type="number" step="0.5" data-i="1" data-j="1" value="0"></td>
+        <td><input type="number" step="0.5" data-i="1" data-j="2" value="1"></td>
+        <td><div class="probcell rowprob" id="x1cell"><span class="pnum" id="x1num">&mdash;</span><div class="pbar-track"><div class="pbar-fill" id="x1bar"></div></div></div></td>
+      </tr>
+      <tr>
+        <th class="rowhead">S</th>
+        <td><input type="number" step="0.5" data-i="2" data-j="0" value="1"></td>
+        <td><input type="number" step="0.5" data-i="2" data-j="1" value="-1"></td>
+        <td><input type="number" step="0.5" data-i="2" data-j="2" value="0"></td>
+        <td><div class="probcell rowprob" id="x2cell"><span class="pnum" id="x2num">&mdash;</span><div class="pbar-track"><div class="pbar-fill" id="x2bar"></div></div></div></td>
+      </tr>
+      <tr>
+        <th class="axislabel ystar">y*</th>
+        <td><div class="probcell colprob" id="y0cell"><span class="pnum" id="y0num">&mdash;</span><div class="pbar-track"><div class="pbar-fill" id="y0bar"></div></div></div></td>
+        <td><div class="probcell colprob" id="y1cell"><span class="pnum" id="y1num">&mdash;</span><div class="pbar-track"><div class="pbar-fill" id="y1bar"></div></div></div></td>
+        <td><div class="probcell colprob" id="y2cell"><span class="pnum" id="y2num">&mdash;</span><div class="pbar-track"><div class="pbar-fill" id="y2bar"></div></div></div></td>
+        <td><div class="valuecell"><span class="vlabel">game value</span><span class="vnum" id="gameValue">&mdash;</span></div></td>
+      </tr>
+    </table>
+
+    <div class="type-banner" id="typeBanner">&mdash;</div>
+    <div class="caption">rows = Player 1's action &middot; columns = Player 2's action &middot; entry = payoff from Player 2 to Player 1<br><b>x*</b> = Player 1's mixed policy (right) &middot; <b class="y">y*</b> = Player 2's mixed policy (below) &middot; <b class="g">gold</b> = game value</div>
+  </div>
+
+</div>
+  <div class="slide-stripe"></div>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const LABELS = ['R','P','S'];
+  const EPS = 1e-7;
+
+  function gaussianSolve(Min, bin){
+    const n = bin.length;
+    const M = Min.map(row=>row.slice());
+    const b = bin.slice();
+    for(let col=0; col<n; col++){
+      let piv = col;
+      for(let r=col+1;r<n;r++){ if(Math.abs(M[r][col])>Math.abs(M[piv][col])) piv=r; }
+      if(Math.abs(M[piv][col]) < 1e-10) return null;
+      if(piv!==col){ [M[col],M[piv]]=[M[piv],M[col]]; [b[col],b[piv]]=[b[piv],b[col]]; }
+      for(let r=0;r<n;r++){
+        if(r===col) continue;
+        const factor = M[r][col]/M[col][col];
+        for(let c=col;c<n;c++) M[r][c]-=factor*M[col][c];
+        b[r]-=factor*b[col];
+      }
+    }
+    return M.map((row,i)=>b[i]/row[i]);
+  }
+
+  function checkPureSaddle(A){
+    for(let i=0;i<3;i++){
+      for(let j=0;j<3;j++){
+        const val = A[i][j];
+        let isColMin=true, isRowMax=true;
+        for(let r=0;r<3;r++) if(A[r][j] < val-1e-9) isColMin=false;
+        for(let c=0;c<3;c++) if(A[i][c] > val+1e-9) isRowMax=false;
+        if(isColMin && isRowMax){
+          const x=[0,0,0], y=[0,0,0]; x[i]=1; y[j]=1;
+          return { x, y, v: val, type:'pure', i, j };
+        }
+      }
+    }
+    return null;
+  }
+
+  function solveFullSupport(A){
+    const My = [
+      [A[0][0],A[0][1],A[0][2],-1],
+      [A[1][0],A[1][1],A[1][2],-1],
+      [A[2][0],A[2][1],A[2][2],-1],
+      [1,1,1,0]
+    ];
+    const solY = gaussianSolve(My, [0,0,0,1]);
+    if(!solY) return null;
+    const Mx = [
+      [A[0][0],A[1][0],A[2][0],-1],
+      [A[0][1],A[1][1],A[2][1],-1],
+      [A[0][2],A[1][2],A[2][2],-1],
+      [1,1,1,0]
+    ];
+    const solX = gaussianSolve(Mx, [0,0,0,1]);
+    if(!solX) return null;
+    const y = [solY[0],solY[1],solY[2]];
+    const x = [solX[0],solX[1],solX[2]];
+    const v = (solY[3] + solX[3]) / 2;
+    const valid = x.every(v=>v>=-1e-6) && y.every(v=>v>=-1e-6);
+    return { x: x.map(v=>Math.max(0,v)), y: y.map(v=>Math.max(0,v)), v, type:'full', valid };
+  }
+
+  function solve2x2Combos(A){
+    const subsets = [[0,1],[0,2],[1,2]];
+    const excludedOf = pair => [0,1,2].find(k=>!pair.includes(k));
+
+    for(const rowsPair of subsets){
+      const i3 = excludedOf(rowsPair);
+      const [i1,i2] = rowsPair;
+      for(const colsPair of subsets){
+        const j3 = excludedOf(colsPair);
+        const [j1,j2] = colsPair;
+        const a=A[i1][j1], b=A[i1][j2], c=A[i2][j1], d=A[i2][j2];
+        const denom = a-b-c+d;
+        if(Math.abs(denom) < 1e-9) continue;
+        const p = (d-c)/denom;
+        const q = (d-b)/denom;
+        if(p < -EPS || p > 1+EPS || q < -EPS || q > 1+EPS) continue;
+        const v = (a*d - b*c)/denom;
+        const costI3 = A[i3][j1]*q + A[i3][j2]*(1-q);
+        if(costI3 < v - 1e-6) continue;
+        const payJ3 = A[i1][j3]*p + A[i2][j3]*(1-p);
+        if(payJ3 > v + 1e-6) continue;
+        const x=[0,0,0], y=[0,0,0];
+        x[i1]=Math.min(1,Math.max(0,p)); x[i2]=Math.min(1,Math.max(0,1-p));
+        y[j1]=Math.min(1,Math.max(0,q)); y[j2]=Math.min(1,Math.max(0,1-q));
+        return { x, y, v, type:'support2', rows:rowsPair, cols:colsPair };
+      }
+    }
+    return null;
+  }
+
+  function solveGame(A){
+    const pure = checkPureSaddle(A);
+    if(pure) return pure;
+    const full = solveFullSupport(A);
+    if(full && full.valid) return full;
+    const s2 = solve2x2Combos(A);
+    if(s2) return s2;
+    return null;
+  }
+
+  function readMatrix(){
+    const A = [[0,0,0],[0,0,0],[0,0,0]];
+    document.querySelectorAll('#matrixTable input').forEach(inp=>{
+      const i = parseInt(inp.dataset.i), j = parseInt(inp.dataset.j);
+      const v = parseFloat(inp.value);
+      A[i][j] = isFinite(v) ? v : 0;
+    });
+    return A;
+  }
+
+  function setMatrix(A){
+    document.querySelectorAll('#matrixTable input').forEach(inp=>{
+      const i = parseInt(inp.dataset.i), j = parseInt(inp.dataset.j);
+      inp.value = A[i][j];
+    });
+    update();
+  }
+
+  function describeType(sol){
+    if(sol.type==='pure'){
+      return `Pure equilibrium — Player 1 always plays ${LABELS[sol.i]}, Player 2 always plays ${LABELS[sol.j]}.`;
+    }
+    if(sol.type==='full'){
+      return 'Fully mixed equilibrium — both players randomize over all three actions.';
+    }
+    if(sol.type==='support2'){
+      const rowsL = sol.rows.map(i=>LABELS[i]).join(', ');
+      const colsL = sol.cols.map(j=>LABELS[j]).join(', ');
+      return `Partially mixed equilibrium — Player 1 mixes over {${rowsL}}, Player 2 mixes over {${colsL}}; the remaining action is unused (probability 0).`;
+    }
+    return 'No equilibrium found — check the matrix values.';
+  }
+
+  function update(){
+    const A = readMatrix();
+    const sol = solveGame(A);
+    if(!sol){
+      $('typeBanner').textContent = 'No equilibrium found — check the matrix values.';
+      return;
+    }
+    $('typeBanner').textContent = describeType(sol);
+    for(let k=0;k<3;k++){
+      const xp = Math.max(0, sol.x[k]), yp = Math.max(0, sol.y[k]);
+      $('x'+k+'num').textContent = xp.toFixed(2);
+      $('y'+k+'num').textContent = yp.toFixed(2);
+      $('x'+k+'bar').style.width = (xp*100).toFixed(1)+'%';
+      $('y'+k+'bar').style.width = (yp*100).toFixed(1)+'%';
+      $('x'+k+'cell').style.backgroundColor = `rgba(217,164,65,${(0.06+xp*0.28).toFixed(3)})`;
+      $('y'+k+'cell').style.backgroundColor = `rgba(79,168,138,${(0.06+yp*0.28).toFixed(3)})`;
+    }
+    $('gameValue').textContent = sol.v.toFixed(3);
+  }
+
+  document.querySelectorAll('#matrixTable input').forEach(inp=>{
+    inp.addEventListener('input', update);
+  });
+
+  $('presetClassic').addEventListener('click', ()=>{
+    setMatrix([[0,1,-1],[-1,0,1],[1,-1,0]]);
+  });
+  $('presetRedux').addEventListener('click', ()=>{
+    setMatrix([[0,1,-2],[-3,0,4],[5,-6,0]]);
+  });
+
+  update();
+})();
+</script>
+</body>
+</html>

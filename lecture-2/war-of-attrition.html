@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>War of Attrition — Noncooperative Games</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg: #FFFFFF;
+    --panel: #1D3326;
+    --panel-2: #16261C;
+    --sage: #93C670;
+    --cream: #F4F6DE;
+    --text-on-cream: #16261C;
+    --grid: rgba(140,180,130,0.14);
+    --border: rgba(157,187,148,0.14);
+    --text: #F2F7ED;
+    --text-dim: #9DBB94;
+    --p1: #D9A441;
+    --p1-dim: rgba(217,164,65,0.18);
+    --p2: #4FA88A;
+    --p2-dim: rgba(79,168,138,0.18);
+    --gold: #F0C55C;
+    --focus: #F0C55C;
+    --bad: #C9603F;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text-on-cream);
+    font-family: 'Poppins', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .slide-frame{
+    max-width: 1180px;
+    margin: 28px auto 48px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 18px 50px rgba(29,51,38,0.25);
+    color: var(--text);
+  }
+  .slide-frame-inner{ padding: 34px 32px 26px; }
+  .slide-stripe{
+    height: 26px;
+    background:
+      radial-gradient(circle at 12% 50%, rgba(200,150,80,0.55) 0 5px, transparent 6px),
+      radial-gradient(circle at 28% 40%, rgba(140,190,110,0.55) 0 4px, transparent 5px),
+      radial-gradient(circle at 46% 60%, rgba(200,150,80,0.5) 0 3px, transparent 4px),
+      radial-gradient(circle at 63% 35%, rgba(140,190,110,0.6) 0 5px, transparent 6px),
+      radial-gradient(circle at 80% 55%, rgba(200,150,80,0.5) 0 4px, transparent 5px),
+      radial-gradient(circle at 93% 40%, rgba(140,190,110,0.55) 0 3px, transparent 4px),
+      var(--sage);
+  }
+
+  .app{ max-width: 1180px; margin: 0 auto; padding: 28px 20px 48px; }
+
+  header{ margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+  .eyebrow{ font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); margin: 0 0 8px; }
+  h1{ font-family: 'Poppins', sans-serif; font-size: 30px; font-weight: 700; margin: 0 0 10px; letter-spacing: -0.01em; }
+  header p{ max-width: 760px; color: var(--text-dim); font-size: 14.5px; line-height: 1.55; margin: 0; }
+  header p strong{ color: var(--text); font-weight: 600; }
+  code.f{ font-family:'IBM Plex Mono',monospace; background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius:4px; }
+
+  .panel{ background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+
+  .globals{ display:grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-bottom: 16px; }
+  @media (max-width: 640px){ .globals{ grid-template-columns: 1fr; } }
+
+  label{ display:block; font-size: 12.5px; color: var(--text-dim); margin-bottom: 4px; }
+  .valline{ display:flex; justify-content: space-between; align-items:baseline; font-size: 12.5px; color: var(--text-dim); margin-bottom: 3px; }
+  .valline span.num{ font-family: 'IBM Plex Mono', monospace; color: var(--text); font-size: 13px; }
+
+  input[type=range]{ -webkit-appearance: none; width: 100%; height: 22px; background: transparent; cursor: pointer; }
+  input[type=range]::-webkit-slider-runnable-track{ height: 3px; background: rgba(255,255,255,0.18); border-radius: 2px; }
+  input[type=range]::-webkit-slider-thumb{ -webkit-appearance: none; margin-top: -6.5px; width: 16px; height: 16px; border-radius: 50%; background: var(--gold); border: 2px solid #16261C; box-shadow: 0 0 0 3px rgba(240,197,92,0.15); }
+  input[type=range]::-moz-range-track{ height:3px; background: rgba(255,255,255,0.18); border-radius:2px; }
+  input[type=range]::-moz-range-thumb{ width:14px; height:14px; border-radius:50%; background: var(--gold); border: 2px solid #16261C; }
+  .p1-ctl input[type=range]::-webkit-slider-thumb{ background: var(--p1); box-shadow: 0 0 0 3px rgba(217,164,65,0.18);}
+  .p2-ctl input[type=range]::-webkit-slider-thumb{ background: var(--p2); box-shadow: 0 0 0 3px rgba(79,168,138,0.18);}
+  .p1-ctl input[type=range]::-moz-range-thumb{ background: var(--p1); }
+  .p2-ctl input[type=range]::-moz-range-thumb{ background: var(--p2); }
+
+  input[type=range]:focus-visible, select:focus-visible, button:focus-visible, input[type=checkbox]:focus-visible{ outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .tabs{ display:flex; gap:8px; margin-bottom: 16px; }
+  .tab{
+    flex:1; text-align:center; padding: 11px 14px; border-radius: 8px;
+    border: 1px solid var(--border); background: rgba(255,255,255,0.03);
+    font-family:'Poppins',sans-serif; font-weight:600; font-size: 13.5px;
+    color: var(--text-dim); cursor:pointer; transition: all .15s ease;
+  }
+  .tab.active{ background: var(--gold); color:#16261C; border-color: transparent; }
+  .tab:not(.active):hover{ background: rgba(255,255,255,0.08); color: var(--text); }
+
+  .layout{ display:grid; grid-template-columns: 320px 1fr; gap:20px; }
+  @media (max-width: 860px){ .layout{ grid-template-columns: 1fr; } }
+
+  .mode-panel{ display:none; }
+  .mode-panel.active{ display:block; }
+
+  .player-block{ border-radius: 8px; padding: 14px 14px 16px; border: 1px solid var(--border); margin-bottom: 12px; }
+  .player-block.p1-ctl{ background: var(--p1-dim); border-color: rgba(217,164,65,0.35); }
+  .player-block.p2-ctl{ background: var(--p2-dim); border-color: rgba(79,168,138,0.35); }
+  .player-title{ display:flex; align-items:center; gap:8px; font-family:'Poppins',sans-serif; font-weight:600; font-size:14.5px; margin-bottom:10px; }
+  .dot{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .p1-ctl .dot{ background: var(--p1); }
+  .p2-ctl .dot{ background: var(--p2); }
+
+  .inf-row{ display:flex; align-items:center; gap:8px; margin-top:10px; font-size:12.5px; color: var(--text-dim); }
+  .inf-row input{ width:15px; height:15px; }
+
+  button{ font-family:'Poppins',sans-serif; font-weight:600; font-size:13px; border-radius:7px; border:1px solid var(--border); background: rgba(255,255,255,0.04); color: var(--text); padding: 9px 12px; cursor:pointer; transition: background .15s ease; }
+  button:hover{ background: rgba(255,255,255,0.09); }
+  button:disabled{ opacity:0.45; cursor:not-allowed; }
+  .run-btn{ background: var(--gold); color:#16261C; border-color: transparent; width:100%; margin-top: 4px; }
+  .run-btn:hover{ background: #F5D485; }
+
+  .presets{ display:flex; flex-direction:column; gap:6px; margin-top:12px; }
+  .presets button{ background: transparent; text-align:left; font-family:'Poppins',sans-serif; font-weight:500; font-size:12px; color: var(--text-dim); padding:7px 10px; }
+  .presets button:hover{ color: var(--text); background: rgba(255,255,255,0.06); }
+
+  .avg-row{ display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:12px; color: var(--text-dim); font-family:'IBM Plex Mono',monospace; }
+  .avg-row button{ padding: 4px 8px; font-size: 11px; }
+
+  .viz{ display:flex; flex-direction:column; gap:14px; }
+
+  .banner{
+    font-family:'Poppins',sans-serif; font-size:14.5px; font-weight:600;
+    padding: 12px 16px; border-radius: 8px; background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border); min-height: 20px;
+  }
+  .banner.win1{ color: var(--p1); border-color: rgba(217,164,65,0.4); }
+  .banner.win2{ color: var(--p2); border-color: rgba(79,168,138,0.4); }
+  .banner.tie{ color: var(--bad); border-color: rgba(201,96,63,0.4); }
+  .banner.neutral{ color: var(--gold); border-color: rgba(240,197,92,0.4); }
+
+  .timeline-wrap{ overflow-x: auto; padding: 6px 2px 12px; }
+  .timeline{ display:flex; gap:6px; min-height: 92px; align-items:flex-end; }
+
+  .stage{
+    flex: none; width: 46px; display:flex; flex-direction:column; align-items:center; gap:4px;
+    opacity: 0; transform: translateY(6px); animation: stagein .25s ease forwards;
+  }
+  @keyframes stagein{ to{ opacity:1; transform: translateY(0); } }
+  .stage .n{ font-family:'IBM Plex Mono',monospace; font-size: 9.5px; color: var(--text-dim); }
+  .chip{
+    width: 34px; height: 26px; border-radius: 6px; display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-weight:600; font-size: 12px; border: 1.5px solid transparent;
+  }
+  .chip.f1{ background: rgba(217,164,65,0.16); border-color: rgba(217,164,65,0.4); color: var(--p1); }
+  .chip.q1{ background: var(--p1); border-color: var(--p1); color: #16261C; }
+  .chip.f2{ background: rgba(79,168,138,0.16); border-color: rgba(79,168,138,0.4); color: var(--p2); }
+  .chip.q2{ background: var(--p2); border-color: var(--p2); color: #16261C; }
+  .ellipsis{ font-family:'Poppins',sans-serif; color: var(--text-dim); font-size: 20px; padding: 0 8px; align-self:center; }
+
+  .readout{ display:grid; grid-template-columns: repeat(4,1fr); gap:10px; }
+  @media (max-width: 560px){ .readout{ grid-template-columns: repeat(2,1fr); } }
+  .stat{ background: rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:8px; padding:12px 14px; transition: box-shadow .2s ease; }
+  .stat .k{ font-family:'IBM Plex Mono',monospace; font-size:11px; color: var(--text-dim); margin-bottom:4px; }
+  .stat .v{ font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:500; }
+  .stat.j1 .v{ color: var(--p1); }
+  .stat.j2 .v{ color: var(--p2); }
+  .stat.flash{ box-shadow: 0 0 0 2px var(--gold); }
+</style>
+</head>
+<body>
+<div class="slide-frame">
+  <div class="slide-frame-inner">
+
+  <header>
+    <p class="eyebrow">Lecture 2 · Noncooperative Games — Interactive Demo</p>
+    <h1>War of Attrition</h1>
+    <p>Two players fight over a prize worth <strong>v</strong> &gt; 1. Each stage costs 1 (discounted by <strong>δ</strong>)
+      to keep fighting. Whoever concedes first (plays <code class="f">Q</code>) hands the prize to the other player;
+      if both concede on the same stage, no one gets it. Choose a <strong>deterministic concession stage</strong> for each
+      player, or a <strong>per-stage concession probability</strong>, and watch how it plays out.</p>
+  </header>
+
+  <div class="panel globals">
+    <div>
+      <div class="valline"><span>discount factor δ</span><span class="num" id="deltaVal">0.90</span></div>
+      <input type="range" id="delta" min="0.05" max="0.95" step="0.01" value="0.9">
+    </div>
+    <div>
+      <div class="valline"><span>prize value v (v &gt; 1)</span><span class="num" id="vVal">3.00</span></div>
+      <input type="range" id="v" min="1.05" max="10" step="0.05" value="3">
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" id="tabDet">Deterministic — choose T</div>
+    <div class="tab" id="tabProb">Random each stage — choose q</div>
+  </div>
+
+  <div class="layout">
+
+    <div class="panel controls">
+
+      <!-- Deterministic mode -->
+      <div class="mode-panel active" id="detPanel">
+        <div class="player-block p1-ctl">
+          <div class="player-title"><span class="dot"></span>Player 1 — concedes at stage T₁</div>
+          <div class="valline"><span>T₁</span><span class="num" id="T1val">5</span></div>
+          <input type="range" id="T1" min="1" max="20" step="1" value="5">
+          <div class="inf-row"><input type="checkbox" id="inf1"><label for="inf1" style="margin:0;">never concede (T₁ = ∞)</label></div>
+        </div>
+        <div class="player-block p2-ctl">
+          <div class="player-title"><span class="dot"></span>Player 2 — concedes at stage T₂</div>
+          <div class="valline"><span>T₂</span><span class="num" id="T2val">8</span></div>
+          <input type="range" id="T2" min="1" max="20" step="1" value="8">
+          <div class="inf-row"><input type="checkbox" id="inf2"><label for="inf2" style="margin:0;">never concede (T₂ = ∞)</label></div>
+        </div>
+        <button class="run-btn" id="playDet">▶ Play it out</button>
+        <div class="presets">
+          <button id="presetA">Load NE: T₁ = ∞, T₂ = 1</button>
+          <button id="presetB">Load NE: T₁ = 1, T₂ = ∞</button>
+        </div>
+      </div>
+
+      <!-- Probabilistic mode -->
+      <div class="mode-panel" id="probPanel">
+        <div class="player-block p1-ctl">
+          <div class="player-title"><span class="dot"></span>Player 1 — P(concede) each stage</div>
+          <div class="valline"><span>q₁</span><span class="num" id="q1val">0.25</span></div>
+          <input type="range" id="q1" min="0" max="1" step="0.01" value="0.25">
+        </div>
+        <div class="player-block p2-ctl">
+          <div class="player-title"><span class="dot"></span>Player 2 — P(concede) each stage</div>
+          <div class="valline"><span>q₂</span><span class="num" id="q2val">0.25</span></div>
+          <input type="range" id="q2" min="0" max="1" step="0.01" value="0.25">
+        </div>
+        <button class="run-btn" id="runProb">🎲 Run a realization</button>
+        <div class="presets">
+          <button id="presetMSNE">Load symmetric MSNE: q = 1/(1+v)</button>
+        </div>
+        <div class="avg-row">
+          <span id="avgText">0 runs</span>
+          <button id="resetAvg">Reset avg</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="viz">
+      <div class="banner neutral" id="banner">Set your parameters, then run the simulation.</div>
+
+      <div class="panel">
+        <div class="timeline-wrap"><div class="timeline" id="timeline"></div></div>
+      </div>
+
+      <div class="readout">
+        <div class="stat j1"><div class="k" id="j1label">J₁ (realized)</div><div class="v" id="j1val">—</div></div>
+        <div class="stat j2"><div class="k" id="j2label">J₂ (realized)</div><div class="v" id="j2val">—</div></div>
+        <div class="stat j1" id="e1card" style="display:none;"><div class="k">E[J₁]</div><div class="v" id="e1val">—</div></div>
+        <div class="stat j2" id="e2card" style="display:none;"><div class="k">E[J₂]</div><div class="v" id="e2val">—</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+  <div class="slide-stripe"></div>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const els = {
+    delta: $('delta'), v: $('v'), deltaVal: $('deltaVal'), vVal: $('vVal'),
+    tabDet: $('tabDet'), tabProb: $('tabProb'), detPanel: $('detPanel'), probPanel: $('probPanel'),
+    T1: $('T1'), T2: $('T2'), T1val: $('T1val'), T2val: $('T2val'), inf1: $('inf1'), inf2: $('inf2'),
+    playDet: $('playDet'), presetA: $('presetA'), presetB: $('presetB'),
+    q1: $('q1'), q2: $('q2'), q1val: $('q1val'), q2val: $('q2val'),
+    runProb: $('runProb'), presetMSNE: $('presetMSNE'),
+    avgText: $('avgText'), resetAvg: $('resetAvg'),
+    banner: $('banner'), timeline: $('timeline'),
+    j1label: $('j1label'), j2label: $('j2label'), j1val: $('j1val'), j2val: $('j2val'),
+    e1card: $('e1card'), e2card: $('e2card'), e1val: $('e1val'), e2val: $('e2val'),
+  };
+
+  let mode = 'det';
+  let avgN = 0, avgSum1 = 0, avgSum2 = 0;
+  let animToken = 0; // increment to cancel in-flight animations
+
+  function S(k, delta){ return (1 - Math.pow(delta, k)) / (1 - delta); }
+
+  function detCost(T1, T2, delta, v){
+    const j1 = (T1 <= T2) ? S(T1, delta) : S(T2, delta) - Math.pow(delta, T2) * v;
+    const j2 = (T2 <= T1) ? S(T2, delta) : S(T1, delta) - Math.pow(delta, T1) * v;
+    return { j1, j2 };
+  }
+
+  function expectedCost(q1, q2, delta, v){
+    if(q1 === 0 && q2 === 0){ const val = 1/(1-delta); return { e1: val, e2: val }; }
+    const pFF = (1-q1)*(1-q2);
+    const r1 = q1*(1-q2), r2 = (1-q1)*q2, r12 = q1*q2;
+    let w = 1, e1 = 0, e2 = 0;
+    for(let k = 1; k <= 5000; k++){
+      const Sk = (1 - Math.pow(delta,k)) / (1-delta);
+      const dk = Math.pow(delta,k);
+      e1 += w*r1*Sk + w*r2*(Sk - dk*v) + w*r12*Sk;
+      e2 += w*r2*Sk + w*r1*(Sk - dk*v) + w*r12*Sk;
+      w *= pFF;
+      if(w < 1e-14) break;
+    }
+    return { e1, e2 };
+  }
+
+  function readGlobals(){
+    return { delta: parseFloat(els.delta.value), v: parseFloat(els.v.value) };
+  }
+
+  function fmt(x){
+    if(!isFinite(x)) return '∞';
+    return x.toFixed(2);
+  }
+
+  function clearTimeline(){ els.timeline.innerHTML = ''; }
+
+  function addStageChip(n, p1action, p2action, delayIndex){
+    const wrap = document.createElement('div');
+    wrap.className = 'stage';
+    wrap.style.animationDelay = (delayIndex*70) + 'ms';
+    const num = document.createElement('div');
+    num.className = 'n'; num.textContent = n;
+    const c1 = document.createElement('div');
+    c1.className = 'chip ' + (p1action==='Q' ? 'q1' : 'f1');
+    c1.textContent = p1action;
+    const c2 = document.createElement('div');
+    c2.className = 'chip ' + (p2action==='Q' ? 'q2' : 'f2');
+    c2.textContent = p2action;
+    wrap.appendChild(c1); wrap.appendChild(c2); wrap.appendChild(num);
+    els.timeline.appendChild(wrap);
+  }
+
+  function addEllipsis(delayIndex){
+    const e = document.createElement('div');
+    e.className = 'ellipsis';
+    e.style.opacity = 0;
+    e.style.animation = 'stagein .25s ease forwards';
+    e.style.animationDelay = (delayIndex*70) + 'ms';
+    e.textContent = '⋯';
+    els.timeline.appendChild(e);
+  }
+
+  function setBanner(text, cls){
+    els.banner.textContent = text;
+    els.banner.className = 'banner ' + cls;
+  }
+
+  function flashStat(id){
+    const node = document.getElementById(id).closest('.stat');
+    if(!node) return;
+    node.classList.add('flash');
+    setTimeout(()=>node.classList.remove('flash'), 700);
+  }
+
+  // ---------- Deterministic mode ----------
+
+  function updateDetLabels(){
+    els.T1val.textContent = els.inf1.checked ? '∞' : els.T1.value;
+    els.T2val.textContent = els.inf2.checked ? '∞' : els.T2.value;
+    els.T1.disabled = els.inf1.checked;
+    els.T2.disabled = els.inf2.checked;
+  }
+
+  function getT1(){ return els.inf1.checked ? Infinity : parseInt(els.T1.value); }
+  function getT2(){ return els.inf2.checked ? Infinity : parseInt(els.T2.value); }
+
+  async function playDeterministic(){
+    const myToken = ++animToken;
+    updateDetLabels();
+    const { delta, v } = readGlobals();
+    const T1 = getT1(), T2 = getT2();
+    const { j1, j2 } = detCost(T1, T2, delta, v);
+    const K = Math.min(T1, T2);
+
+    els.j1label.textContent = 'J₁'; els.j2label.textContent = 'J₂';
+    els.e1card.style.display = 'none'; els.e2card.style.display = 'none';
+    clearTimeline();
+    els.j1val.textContent = '0.00'; els.j2val.textContent = '0.00';
+
+    if(K === Infinity){
+      // both never concede: show a handful of F/F stages, then ellipsis, then converge
+      for(let k=1; k<=10; k++) addStageChip(k, 'F', 'F', k);
+      addEllipsis(11);
+      setBanner('Neither player ever concedes. The standoff continues forever — but since 0 < δ < 1, the discounted cost still converges.', 'neutral');
+      await sleep(10*70 + 400);
+      if(myToken !== animToken) return;
+      els.j1val.textContent = fmt(j1); els.j2val.textContent = fmt(j2);
+      flashStat('j1val'); flashStat('j2val');
+      return;
+    }
+
+    let running1 = 0, running2 = 0;
+    for(let k=1; k<=K; k++){
+      const p1a = (k === T1) ? 'Q' : 'F';
+      const p2a = (k === T2) ? 'Q' : 'F';
+      addStageChip(k, p1a, p2a, k-1);
+      running1 += Math.pow(delta, k-1);
+      running2 += Math.pow(delta, k-1);
+      await sleep(220);
+      if(myToken !== animToken) return;
+      els.j1val.textContent = fmt(running1);
+      els.j2val.textContent = fmt(running2);
+    }
+
+    await sleep(200);
+    if(myToken !== animToken) return;
+
+    if(T1 === T2){
+      setBanner(`Both players concede simultaneously at stage ${K} — no one receives the prize.`, 'tie');
+    } else if(T1 < T2){
+      setBanner(`Player 1 concedes at stage ${K}. Player 2 wins the prize (v = ${fmt(v)}, discounted by δ^${K}).`, 'win2');
+      flashStat('j2val');
+    } else {
+      setBanner(`Player 2 concedes at stage ${K}. Player 1 wins the prize (v = ${fmt(v)}, discounted by δ^${K}).`, 'win1');
+      flashStat('j1val');
+    }
+    els.j1val.textContent = fmt(j1);
+    els.j2val.textContent = fmt(j2);
+  }
+
+  function sleep(ms){ return new Promise(res => setTimeout(res, ms)); }
+
+  // ---------- Probabilistic mode ----------
+
+  function updateExpected(){
+    const { delta, v } = readGlobals();
+    const q1 = parseFloat(els.q1.value), q2 = parseFloat(els.q2.value);
+    const { e1, e2 } = expectedCost(q1, q2, delta, v);
+    els.e1val.textContent = fmt(e1);
+    els.e2val.textContent = fmt(e2);
+  }
+
+  async function runRealization(){
+    const myToken = ++animToken;
+    const { delta, v } = readGlobals();
+    const q1 = parseFloat(els.q1.value), q2 = parseFloat(els.q2.value);
+    const maxStages = 200;
+
+    els.j1label.textContent = 'J₁ (realized)'; els.j2label.textContent = 'J₂ (realized)';
+    clearTimeline();
+    els.j1val.textContent = '0.00'; els.j2val.textContent = '0.00';
+
+    const stages = [];
+    let resolved = false;
+    for(let k=1; k<=maxStages; k++){
+      const c1 = Math.random() < q1;
+      const c2 = Math.random() < q2;
+      stages.push({ p1: c1 ? 'Q' : 'F', p2: c2 ? 'Q' : 'F' });
+      if(c1 || c2){ resolved = true; break; }
+    }
+    const K = stages.length;
+
+    let running1 = 0, running2 = 0;
+    const showCount = Math.min(K, 60);
+    for(let k=1; k<=showCount; k++){
+      const st = stages[k-1];
+      addStageChip(k, st.p1, st.p2, k-1);
+      running1 += Math.pow(delta, k-1);
+      running2 += Math.pow(delta, k-1);
+      await sleep(Math.max(220 - K*2, 60));
+      if(myToken !== animToken) return;
+      els.j1val.textContent = fmt(running1);
+      els.j2val.textContent = fmt(running2);
+    }
+    if(K > showCount) addEllipsis(showCount);
+
+    const last = stages[K-1];
+    const Sk = (1 - Math.pow(delta,K)) / (1-delta);
+    const dk = Math.pow(delta,K);
+    let j1, j2;
+
+    if(resolved){
+      if(last.p1 === 'Q' && last.p2 === 'Q'){
+        j1 = Sk; j2 = Sk;
+        setBanner(`Both players concede on stage ${K} — no one receives the prize.`, 'tie');
+      } else if(last.p1 === 'Q'){
+        j1 = Sk; j2 = Sk - dk*v;
+        setBanner(`Player 1 concedes on stage ${K}. Player 2 wins the prize.`, 'win2');
+        flashStat('j2val');
+      } else {
+        j2 = Sk; j1 = Sk - dk*v;
+        setBanner(`Player 2 concedes on stage ${K}. Player 1 wins the prize.`, 'win1');
+        flashStat('j1val');
+      }
+    } else {
+      j1 = Sk; j2 = Sk;
+      setBanner(`Neither player conceded within ${maxStages} stages (very unlikely) — showing partial cost. Try running again.`, 'neutral');
+    }
+
+    els.j1val.textContent = fmt(j1);
+    els.j2val.textContent = fmt(j2);
+
+    avgN += 1; avgSum1 += j1; avgSum2 += j2;
+    updateAvg();
+  }
+
+  function updateAvg(){
+    if(avgN === 0){ els.avgText.textContent = '0 runs'; return; }
+    els.avgText.textContent = `${avgN} run${avgN>1?'s':''} · avg J₁=${(avgSum1/avgN).toFixed(2)}, J₂=${(avgSum2/avgN).toFixed(2)}`;
+  }
+
+  function resetAvg(){ avgN=0; avgSum1=0; avgSum2=0; updateAvg(); }
+
+  // ---------- wiring ----------
+
+  function switchMode(m){
+    mode = m;
+    els.tabDet.classList.toggle('active', m==='det');
+    els.tabProb.classList.toggle('active', m==='prob');
+    els.detPanel.classList.toggle('active', m==='det');
+    els.probPanel.classList.toggle('active', m==='prob');
+    els.e1card.style.display = (m==='prob') ? '' : 'none';
+    els.e2card.style.display = (m==='prob') ? '' : 'none';
+    clearTimeline();
+    els.j1val.textContent = '—'; els.j2val.textContent = '—';
+    els.j1label.textContent = m==='det' ? 'J₁' : 'J₁ (realized)';
+    els.j2label.textContent = m==='det' ? 'J₂' : 'J₂ (realized)';
+    setBanner(m==='det' ? 'Set T₁ and T₂, then press Play.' : 'Set q₁ and q₂, then run a realization.', 'neutral');
+    if(m==='prob') updateExpected();
+  }
+
+  els.delta.addEventListener('input', () => { els.deltaVal.textContent = parseFloat(els.delta.value).toFixed(2); if(mode==='prob') updateExpected(); resetAvg(); });
+  els.v.addEventListener('input', () => { els.vVal.textContent = parseFloat(els.v.value).toFixed(2); if(mode==='prob') updateExpected(); resetAvg(); });
+
+  [els.T1, els.T2, els.inf1, els.inf2].forEach(inp => inp.addEventListener('input', updateDetLabels));
+
+  els.q1.addEventListener('input', () => { els.q1val.textContent = parseFloat(els.q1.value).toFixed(2); updateExpected(); resetAvg(); });
+  els.q2.addEventListener('input', () => { els.q2val.textContent = parseFloat(els.q2.value).toFixed(2); updateExpected(); resetAvg(); });
+
+  els.tabDet.addEventListener('click', () => switchMode('det'));
+  els.tabProb.addEventListener('click', () => switchMode('prob'));
+
+  els.playDet.addEventListener('click', playDeterministic);
+  els.runProb.addEventListener('click', runRealization);
+  els.resetAvg.addEventListener('click', resetAvg);
+
+  els.presetA.addEventListener('click', () => {
+    els.inf1.checked = true; els.inf2.checked = false; els.T2.value = 1;
+    updateDetLabels(); playDeterministic();
+  });
+  els.presetB.addEventListener('click', () => {
+    els.inf1.checked = false; els.inf2.checked = true; els.T1.value = 1;
+    updateDetLabels(); playDeterministic();
+  });
+  els.presetMSNE.addEventListener('click', () => {
+    const v = parseFloat(els.v.value);
+    const q = 1/(1+v);
+    els.q1.value = q.toFixed(2); els.q2.value = q.toFixed(2);
+    els.q1val.textContent = q.toFixed(2); els.q2val.textContent = q.toFixed(2);
+    updateExpected(); resetAvg();
+  });
+
+  // init
+  updateDetLabels();
+  els.deltaVal.textContent = parseFloat(els.delta.value).toFixed(2);
+  els.vVal.textContent = parseFloat(els.v.value).toFixed(2);
+  switchMode('det');
+})();
+</script>
+</body>
+</html>

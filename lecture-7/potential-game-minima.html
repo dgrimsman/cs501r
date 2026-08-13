@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Potential Games — Minima Explorer</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg: #FFFFFF;
+    --panel: #1D3326;
+    --panel-2: #16261C;
+    --sage: #93C670;
+    --cream: #F4F6DE;
+    --text-on-cream: #16261C;
+    --grid: rgba(140,180,130,0.14);
+    --border: rgba(157,187,148,0.14);
+    --text: #F2F7ED;
+    --text-dim: #9DBB94;
+    --p1: #D9A441;
+    --p2: #4FA88A;
+    --local: #4FA88A;
+    --gold: #F0C55C;
+    --flag: #C97B4A;
+    --focus: #F0C55C;
+  }
+  html{ color-scheme: dark; }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text-on-cream);
+    font-family: 'Poppins', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .slide-frame{
+    max-width: 1180px;
+    margin: 28px auto 48px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 18px 50px rgba(29,51,38,0.25);
+    color: var(--text);
+  }
+  .slide-frame-inner{ padding: 34px 32px 26px; }
+  .slide-stripe{
+    height: 26px;
+    background:
+      radial-gradient(circle at 12% 50%, rgba(200,150,80,0.55) 0 5px, transparent 6px),
+      radial-gradient(circle at 28% 40%, rgba(140,190,110,0.55) 0 4px, transparent 5px),
+      radial-gradient(circle at 46% 60%, rgba(200,150,80,0.5) 0 3px, transparent 4px),
+      radial-gradient(circle at 63% 35%, rgba(140,190,110,0.6) 0 5px, transparent 6px),
+      radial-gradient(circle at 80% 55%, rgba(200,150,80,0.5) 0 4px, transparent 5px),
+      radial-gradient(circle at 93% 40%, rgba(140,190,110,0.55) 0 3px, transparent 4px),
+      var(--sage);
+  }
+  .app{ max-width: 1180px; margin: 0 auto; padding: 28px 20px 48px; }
+  header{ margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+  .eyebrow{ font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); margin: 0 0 8px; }
+  h1{ font-family: 'Poppins', sans-serif; font-size: 28px; font-weight: 700; margin: 0 0 10px; letter-spacing: -0.01em; }
+  header p{ max-width: 820px; color: var(--text-dim); font-size: 14px; line-height: 1.6; margin: 0 0 8px; }
+  header p strong{ color: var(--text); font-weight: 600; }
+  .defs{ display:grid; grid-template-columns: repeat(3,1fr); gap:10px; margin-top:14px; }
+  @media (max-width: 820px){ .defs{ grid-template-columns: 1fr; } }
+  .defcard{ border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height:1.5; border:1px solid var(--border); background: rgba(255,255,255,0.03); }
+  .defcard .dtitle{ font-family:'Poppins',sans-serif; font-weight:700; font-size:12.5px; margin-bottom:4px; display:flex; align-items:center; gap:6px; }
+  .swatch{ width:10px; height:10px; border-radius:50%; display:inline-block; }
+
+  .panel{ background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+
+  .controls{ display:flex; flex-wrap:wrap; gap: 14px; align-items:flex-end; margin-bottom: 16px; }
+  .field{ display:flex; flex-direction:column; gap:4px; }
+  .field label{ font-size: 11.5px; color: var(--text-dim); font-family:'IBM Plex Mono',monospace; }
+  .field select{ background: rgba(0,0,0,0.28); color: var(--text); border:1px solid var(--border); border-radius:7px; padding:9px 11px; font-family:'IBM Plex Mono',monospace; font-size: 13px; min-width: 340px; }
+  .formula{ font-family:'IBM Plex Mono',monospace; font-size: 12px; color: var(--text-dim); background: rgba(0,0,0,0.2); border:1px solid var(--border); border-radius:7px; padding: 9px 12px; flex: 1 1 320px; }
+  .formula b{ color: var(--text); font-weight:600; }
+
+  #errBanner{ display:none; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color: var(--flag); background: rgba(201,123,74,0.1); border:1px solid rgba(201,123,74,0.35); border-radius:7px; padding:10px 12px; margin-bottom:12px; }
+
+  #plotDiv{ width:100%; height: 560px; }
+
+  .results{ margin-top: 16px; display:grid; grid-template-columns: repeat(3,1fr); gap:12px; }
+  @media (max-width: 820px){ .results{ grid-template-columns:1fr; } }
+  .rescard{ border-radius:8px; padding:12px 14px; border:1px solid var(--border); background: rgba(255,255,255,0.03); }
+  .rescard .rtitle{ font-family:'Poppins',sans-serif; font-weight:700; font-size:12.5px; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+  .rescard ul{ margin:0; padding-left:0; list-style:none; font-family:'IBM Plex Mono',monospace; font-size:11.5px; color: var(--text-dim); line-height:1.8; }
+  .rescard .none{ opacity:0.5; font-style:italic; }
+  .eq-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:4px 0; flex-wrap:wrap; }
+  .view-btns{ display:flex; gap:4px; }
+  .viewbtn{ font-family:'Poppins',sans-serif; font-size:10.5px; font-weight:600; padding:3px 8px; border-radius:5px; border:1px solid var(--border); background:rgba(255,255,255,0.05); color:var(--text-dim); cursor:pointer; width:auto; }
+  .viewbtn:hover{ background:rgba(255,255,255,0.12); color:var(--text); }
+  .caption{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--text-dim); opacity:0.75; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="slide-frame">
+  <div class="slide-frame-inner">
+
+  <header>
+    <p class="eyebrow">Lecture 7 &middot; Potential Games — Interactive Demo</p>
+    <h1>Global, Local, and Directional-Local Minima of &phi;(&gamma;&#8321;, &gamma;&#8322;)</h1>
+    <p>Choose an example below. Each one is marked with the exact definitions from lecture:
+      a <strong>global minimum</strong> beats every point in the domain; a <strong>local minimum</strong> beats every nearby point in every direction;
+      a <strong>directionally-local minimum</strong> (a Nash equilibrium of the potential game) only has to beat points reachable by moving <em>one coordinate at a time</em> —
+      so it can fail to be a true local minimum if a simultaneous, diagonal move does better.</p>
+    <div class="defs">
+      <div class="defcard"><div class="dtitle"><span class="swatch" style="background:var(--gold)"></span>Global minimum</div>&phi;(&gamma;*) &le; &phi;(&gamma;) for all &gamma; in the domain.</div>
+      <div class="defcard"><div class="dtitle"><span class="swatch" style="background:var(--local)"></span>Local minimum</div>beats every neighboring point, including diagonal moves — a true minimum in the usual multivariable sense.</div>
+      <div class="defcard"><div class="dtitle"><span class="swatch" style="background:var(--flag)"></span>Directional-local only</div>beats every neighbor along the &gamma;&#8321; and &gamma;&#8322; axes alone, but <em>not</em> diagonally — a Nash equilibrium that is not a true local minimum.</div>
+    </div>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="field">
+        <label for="presetSelect">example</label>
+        <select id="presetSelect">
+          <option value="three" selected>Global, local, and directional-local minima (recommended)</option>
+          <option value="ripple">Ripple with two wells (Lecture 7, slide 6 — many equilibria)</option>
+          <option value="simple">Single clean global minimum</option>
+          <option value="saddle">Pure saddle (directional-only, centered)</option>
+        </select>
+      </div>
+      <div class="formula">&phi;(x,y) = <b id="formulaText"></b></div>
+      <div class="field" style="justify-content:flex-end;">
+        <label style="visibility:hidden;">.</label>
+        <label style="display:flex; align-items:center; gap:6px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--text-dim); cursor:pointer;">
+          <input type="checkbox" id="contourToggle" style="width:14px; height:14px;">
+          show contour lines (may lag while rotating)
+        </label>
+      </div>
+    </div>
+
+    <div id="errBanner"></div>
+    <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
+      <button id="resetViewBtn" class="viewbtn" style="padding:5px 12px; font-size:11.5px;">↺ Reset view</button>
+    </div>
+    <div id="plotDiv"></div>
+
+    <div class="results">
+      <div class="rescard"><div class="rtitle"><span class="swatch" style="background:var(--gold)"></span>Global minimum</div><ul id="listGlobal"></ul></div>
+      <div class="rescard"><div class="rtitle"><span class="swatch" style="background:var(--local)"></span>Local minima (non-global)</div><ul id="listLocal"></ul></div>
+      <div class="rescard"><div class="rtitle"><span class="swatch" style="background:var(--flag)"></span>Directional-local only</div><ul id="listDirectional"></ul></div>
+    </div>
+    <div class="caption" id="curationNote"></div>
+  </div>
+
+</div>
+  <div class="slide-stripe"></div>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const N = 45; // grid resolution per axis (kept modest for smooth interaction, especially in Firefox)
+
+  const PRESETS = {
+    ripple: {
+      label: "-sin(x²+y²)/(x²+y²) - 0.3·sin((x-2)²+(y-2)²)/((x-2)²+(y-2)²)",
+      expr: "-sin(x**2+y**2+1e-12)/(x**2+y**2+1e-12) - 0.3*sin((x-2)**2+(y-2)**2+1e-12)/((x-2)**2+(y-2)**2+1e-12)",
+      xmin:-5, xmax:5, ymin:-5, ymax:5,
+      curation: { mode: 'explicit', local: [[1.9654,1.9654],[2.6285,2.6285]], directional: [[4.4595,4.4595],[5.1112,5.1112]] },
+      note: "Marker positions here are solved analytically (via the Hessian at each critical point) rather than auto-detected on the grid — the true local minima near (2,2) are very shallow in one direction, which made the grid-based detector misclassify them earlier."
+    },
+    three: {
+      label: "-4·exp(-(x²+y²)/0.5) - 2.5·exp(-((x-1)²+(y-1)²)/0.2) - 2.5·exp(-((x+1)²+y²)/0.2)",
+      expr: "-4*exp(-(x**2+y**2)/0.5) - 2.5*exp(-((x-1)**2+(y-1)**2)/0.2) - 2.5*exp(-((x+1)**2+y**2)/0.2)",
+      xmin:-3, xmax:3, ymin:-3, ymax:3,
+      curation: { mode: 'explicit', global: [-0.012,0.000], local: [[-0.863,0.000]], directional: [[0.987,0.987]] },
+      note: "All three points are true local minima (verified: both Hessian eigenvalues positive at each) — which is fine, since every local minimum is automatically also a directionally-local minimum (Nash equilibrium) of the potential game. This example doesn't need the trickier 'saddle in disguise' case to make that point."
+    },
+    simple: {
+      label: "-3·exp(-((x-1)²+(y+1)²)/4)",
+      expr: "-3*exp(-((x-1)**2+(y+1)**2)/4)",
+      xmin:-6, xmax:6, ymin:-6, ymax:6,
+      curation: null,
+      note: ""
+    },
+    saddle: {
+      label: "x² - 3xy + y²",
+      expr: "x**2 - 3*x*y + y**2",
+      xmin:-6, xmax:6, ymin:-6, ymax:6,
+      curation: null,
+      note: "This function is unbounded below, so the marked \"global minimum\" is only the minimum within the displayed window."
+    }
+  };
+
+  function compileFunc(exprStr){
+    const body = `
+      const {sin,cos,tan,asin,acos,atan,atan2,exp,log,log2,log10,sqrt,cbrt,abs,pow,min,max,sign,floor,ceil,round,PI,E,sinh,cosh,tanh} = Math;
+      return (${exprStr});
+    `;
+    return new Function('x','y', body);
+  }
+
+  function computeGrid(func, xmin,xmax,ymin,ymax){
+    const xs = new Array(N), ys = new Array(N);
+    for(let i=0;i<N;i++) xs[i] = xmin + (xmax-xmin)*i/(N-1);
+    for(let j=0;j<N;j++) ys[j] = ymin + (ymax-ymin)*j/(N-1);
+    const Z = new Array(N);
+    for(let j=0;j<N;j++){
+      Z[j] = new Array(N);
+      for(let i=0;i<N;i++){
+        let v = func(xs[i], ys[j]);
+        Z[j][i] = (typeof v === 'number' && isFinite(v)) ? v : NaN;
+      }
+    }
+    return { xs, ys, Z };
+  }
+
+  function classify(xs, ys, Z){
+    let zmin = Infinity, zmax = -Infinity, gi=-1, gj=-1;
+    for(let j=0;j<N;j++) for(let i=0;i<N;i++){
+      const v = Z[j][i];
+      if(!isFinite(v)) continue;
+      if(v < zmin){ zmin=v; gi=i; gj=j; }
+      if(v > zmax) zmax = v;
+    }
+    const EPS = 1e-6; // small fixed tolerance for floating-point safety only
+    const locals = [], directional = [];
+
+    for(let j=1;j<N-1;j++){
+      for(let i=1;i<N-1;i++){
+        const v = Z[j][i];
+        if(!isFinite(v)) continue;
+        if(i===gi && j===gj) continue;
+        const nbrs = {
+          left: Z[j][i-1], right: Z[j][i+1], down: Z[j-1][i], up: Z[j+1][i],
+          dl: Z[j-1][i-1], dr: Z[j-1][i+1], ul: Z[j+1][i-1], ur: Z[j+1][i+1]
+        };
+        if(Object.values(nbrs).some(n=>!isFinite(n))) continue;
+
+        const axisOK = v < nbrs.left-EPS && v < nbrs.right-EPS && v < nbrs.down-EPS && v < nbrs.up-EPS;
+        if(!axisOK) continue;
+        const diagOK = v < nbrs.dl-EPS && v < nbrs.dr-EPS && v < nbrs.ul-EPS && v < nbrs.ur-EPS;
+
+        if(diagOK) locals.push({x:xs[i], y:ys[j], z:v});
+        else directional.push({x:xs[i], y:ys[j], z:v});
+      }
+    }
+
+    const global = gi>=0 ? { x:xs[gi], y:ys[gj], z:zmin } : null;
+    return { global, locals, directional };
+  }
+
+  function curate(locals, directional, global_, curation, func){
+    if(!curation) return { curatedGlobal: global_, curatedLocals: locals, curatedDirectional: directional };
+    if(curation.mode === 'topN'){
+      const combined = [...locals, ...directional].sort((a,b)=>a.z-b.z);
+      return { curatedGlobal: global_, curatedLocals: [], curatedDirectional: combined.slice(0, curation.count) };
+    }
+    if(curation.mode === 'explicit'){
+      const toPts = coords => coords.map(([px,py])=>({x:px, y:py, z:func(px,py)}));
+      return {
+        curatedGlobal: curation.global ? toPts([curation.global])[0] : global_,
+        curatedLocals: toPts(curation.local || []),
+        curatedDirectional: toPts(curation.directional || [])
+      };
+    }
+    return { curatedGlobal: global_, curatedLocals: locals, curatedDirectional: directional };
+  }
+
+
+  function plotPreset(key){
+    const preset = PRESETS[key];
+    const errBanner = $('errBanner');
+    errBanner.style.display = 'none';
+    $('formulaText').textContent = preset.label;
+    $('curationNote').textContent = preset.note;
+
+    let func;
+    try{
+      func = compileFunc(preset.expr);
+    } catch(e){
+      errBanner.textContent = 'Error parsing φ(x,y): ' + e.message;
+      errBanner.style.display = 'block';
+      return;
+    }
+
+    const grid = computeGrid(func, preset.xmin, preset.xmax, preset.ymin, preset.ymax);
+    const { xs, ys, Z } = grid;
+    const { global, locals, directional } = classify(xs, ys, Z);
+
+    let curatedGlobal = global, curatedLocals = locals, curatedDirectional = directional;
+    if(preset.curation){
+      const c = curate(locals, directional, global, preset.curation, func);
+      curatedGlobal = c.curatedGlobal; curatedLocals = c.curatedLocals; curatedDirectional = c.curatedDirectional;
+    }
+
+    const surface = {
+      type: 'surface', x: xs, y: ys, z: Z,
+      colorscale: [[0,'#16261C'],[0.5,'#6B9C3E'],[0.75,'#4FA88A'],[1,'#F0C55C']],
+      showscale: false, opacity: 0.96,
+      contours: {
+        x: { highlight:false },
+        y: { highlight:false },
+        z: { show: $('contourToggle').checked, usecolormap:true, highlightcolor:'#ffffff', project:{z:false} }
+      }
+    };
+
+    const markerTrace = (pts, color, symbol, name) => ({
+      type:'scatter3d', mode:'markers', name,
+      x: pts.map(p=>p.x), y: pts.map(p=>p.y), z: pts.map(p=>p.z + (Math.abs(p.z)*0.02+0.02)),
+      marker: { size:7, color, symbol, line:{color:'#FFFFFF', width:1} },
+      text: pts.map(p=>`${name}<br>(${p.x.toFixed(2)}, ${p.y.toFixed(2)})<br>φ=${p.z.toFixed(3)}`),
+      hoverinfo:'text'
+    });
+
+    // shared cross-section line data helper (used by both hover and view buttons)
+    function crossSectionData(p){
+      const xLine = xs.map(xv => func(xv, p.y));
+      const yLine = ys.map(yv => func(p.x, yv));
+      const lift = Math.abs(p.z)*0.015 + 0.015;
+      return {
+        xTrace: { x: xs, y: xs.map(()=>p.y), z: xLine.map(v=>v+lift) },
+        yTrace: { x: ys.map(()=>p.x), y: ys, z: yLine.map(v=>v+lift) }
+      };
+    }
+
+    const traces = [surface];
+    const hoverMap = {}; // marker curveNumber+pointIndex -> point {x,y,z}
+
+    function addGroup(pts, color, symbol, name){
+      if(!pts.length) return [];
+      const markerIdx = traces.length;
+      traces.push(markerTrace(pts, color, symbol, name));
+      const records = [];
+      pts.forEach((p, i) => {
+        hoverMap[markerIdx + ':' + i] = p;
+        records.push({ p });
+      });
+      return records;
+    }
+
+    const globalRecords = addGroup(curatedGlobal ? [curatedGlobal] : [], '#F0C55C', 'diamond', 'Global minimum');
+    const localRecords = addGroup(curatedLocals, '#4FA88A', 'circle', 'Local minimum');
+    const directionalRecords = addGroup(curatedDirectional, '#C97B4A', 'x', 'Directional-local only');
+
+    // one reusable pair of cross-section traces for the whole plot (updated in place, not recreated per point)
+    const seedPt = curatedGlobal || (curatedLocals[0]) || (curatedDirectional[0]) || {x:0,y:0,z:0};
+    const seedData = crossSectionData(seedPt);
+    const crossXIdx = traces.length;
+    const crossYIdx = crossXIdx + 1;
+    traces.push(
+      { type:'scatter3d', mode:'lines', showlegend:false, hoverinfo:'skip', visible:false,
+        x: seedData.xTrace.x, y: seedData.xTrace.y, z: seedData.xTrace.z, line:{color:'#ffffff', width:10} },
+      { type:'scatter3d', mode:'lines', showlegend:false, hoverinfo:'skip', visible:false,
+        x: seedData.yTrace.x, y: seedData.yTrace.y, z: seedData.yTrace.z, line:{color:'#ffffff', width:10} }
+    );
+
+    const layout = {
+      paper_bgcolor: 'rgba(0,0,0,0)',
+      plot_bgcolor: 'rgba(0,0,0,0)',
+      font: { color:'#F2F7ED', family:'IBM Plex Mono, monospace', size:11 },
+      margin: { l:0, r:0, t:10, b:0 },
+      scene: {
+        xaxis: { title:'γ₁', gridcolor:'rgba(140,180,130,0.25)', zerolinecolor:'rgba(140,180,130,0.4)', backgroundcolor:'rgba(0,0,0,0)', showspikes:true, spikethickness:6, spikecolor:'#F0C55C', spikesides:false },
+        yaxis: { title:'γ₂', gridcolor:'rgba(140,180,130,0.25)', zerolinecolor:'rgba(140,180,130,0.4)', backgroundcolor:'rgba(0,0,0,0)', showspikes:true, spikethickness:6, spikecolor:'#F0C55C', spikesides:false },
+        zaxis: { title:'φ(γ₁,γ₂)', gridcolor:'rgba(140,180,130,0.25)', zerolinecolor:'rgba(140,180,130,0.4)', backgroundcolor:'rgba(0,0,0,0)', showspikes:true, spikethickness:6, spikecolor:'#F0C55C' },
+        camera: { eye: { x:1.5, y:-1.7, z:0.9 } }
+      },
+      legend: { x:0.02, y:0.98, bgcolor:'rgba(22,38,28,0.75)', bordercolor:'rgba(157,187,148,0.2)', borderwidth:1 }
+    };
+
+    Plotly.purge('plotDiv');
+    Plotly.newPlot('plotDiv', traces, layout, { displayModeBar:true, responsive:true }).then(gd => {
+      gd.removeAllListeners && gd.removeAllListeners('plotly_hover');
+      gd.removeAllListeners && gd.removeAllListeners('plotly_unhover');
+
+      gd.on('plotly_hover', (ev) => {
+        const pt = ev.points && ev.points[0];
+        if(!pt) return;
+        const p = hoverMap[pt.curveNumber + ':' + pt.pointNumber];
+        if(!p) return;
+        const d = crossSectionData(p);
+        Plotly.restyle(gd, {
+          x: [d.xTrace.x, d.yTrace.x], y: [d.xTrace.y, d.yTrace.y], z: [d.xTrace.z, d.yTrace.z],
+          visible: [true, true]
+        }, [crossXIdx, crossYIdx]);
+      });
+      gd.on('plotly_unhover', () => {
+        Plotly.restyle(gd, {visible:[false,false]}, [crossXIdx, crossYIdx]);
+      });
+
+      const defaultEye = {x:1.5, y:-1.7, z:0.9};
+      $('resetViewBtn').onclick = () => {
+        Plotly.update(gd, {visible:[false,false]}, {'scene.camera.eye': defaultEye}, [crossXIdx, crossYIdx]);
+      };
+
+      function viewFromPlayer(rec, player){
+        const d = crossSectionData(rec.p);
+        const dataUpdate = {
+          x: [d.xTrace.x, d.yTrace.x], y: [d.xTrace.y, d.yTrace.y], z: [d.xTrace.z, d.yTrace.z],
+          visible: player===1 ? [true, false] : [false, true]
+        };
+        const eye = player===1 ? {x:0.05, y:2.4, z:0.35} : {x:2.4, y:0.05, z:0.35};
+        Plotly.update(gd, dataUpdate, {'scene.camera.eye': eye}, [crossXIdx, crossYIdx]);
+      }
+
+      function buildList(ulId, records, showEmpty){
+        const ul = $(ulId);
+        ul.innerHTML = '';
+        if(records.length===0){ ul.innerHTML = `<li class="none">${showEmpty}</li>`; return; }
+        records.forEach(rec => {
+          const li = document.createElement('li');
+          li.className = 'eq-row';
+          const txt = document.createElement('span');
+          txt.textContent = `(${rec.p.x.toFixed(2)}, ${rec.p.y.toFixed(2)})  φ=${rec.p.z.toFixed(3)}`;
+          li.appendChild(txt);
+          const btns = document.createElement('span');
+          btns.className = 'view-btns';
+          const b1 = document.createElement('button');
+          b1.className = 'viewbtn'; b1.textContent = 'P1 view';
+          b1.addEventListener('click', ()=> viewFromPlayer(rec, 1));
+          const b2 = document.createElement('button');
+          b2.className = 'viewbtn'; b2.textContent = 'P2 view';
+          b2.addEventListener('click', ()=> viewFromPlayer(rec, 2));
+          btns.appendChild(b1); btns.appendChild(b2);
+          li.appendChild(btns);
+          ul.appendChild(li);
+        });
+      }
+
+      buildList('listGlobal', globalRecords, 'none found');
+      buildList('listLocal', localRecords, 'none shown');
+      buildList('listDirectional', directionalRecords, 'none shown');
+    });
+  }
+
+  $('presetSelect').addEventListener('change', (e)=> plotPreset(e.target.value));
+  $('contourToggle').addEventListener('change', (e)=>{
+    const gd = $('plotDiv');
+    if(gd && gd.data) Plotly.restyle(gd, {'contours.z.show': e.target.checked}, [0]);
+  });
+
+  plotPreset('three');
+})();
+</script>
+</body>
+</html>

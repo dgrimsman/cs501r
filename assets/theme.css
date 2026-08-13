@@ -1,0 +1,17 @@
+/* Shared design tokens for the course site — matches lecture slide theme */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root{
+  --bg: #FFFFFF;
+  --panel: #1D3326;
+  --panel-2: #16261C;
+  --sage: #93C670;
+  --cream: #F4F6DE;
+  --text: #F2F7ED;
+  --text-dim: #9DBB94;
+  --text-on-cream: #16261C;
+  --p1: #D9A441;
+  --p2: #4FA88A;
+  --gold: #F0C55C;
+  --border: rgba(157,187,148,0.14);
+}

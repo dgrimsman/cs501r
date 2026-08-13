@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zebra in the Lake — Noncooperative Games</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg: #FFFFFF;
+    --panel: #1D3326;
+    --panel-2: #16261C;
+    --sage: #93C670;
+    --cream: #F4F6DE;
+    --text-on-cream: #16261C;
+    --grid: rgba(140,180,130,0.14);
+    --border: rgba(157,187,148,0.14);
+    --text: #F2F7ED;
+    --text-dim: #9DBB94;
+    --p1: #D9A441;
+    --p1-dim: rgba(217,164,65,0.18);
+    --p2: #4FA88A;
+    --p2-dim: rgba(79,168,138,0.18);
+    --gold: #F0C55C;
+    --focus: #F0C55C;
+    --bad: #C9603F;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text-on-cream);
+    font-family: 'Poppins', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .slide-frame{
+    max-width: 1180px;
+    margin: 28px auto 48px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 18px 50px rgba(29,51,38,0.25);
+    color: var(--text);
+  }
+  .slide-frame-inner{ padding: 34px 32px 26px; }
+  .slide-stripe{
+    height: 26px;
+    background:
+      radial-gradient(circle at 12% 50%, rgba(200,150,80,0.55) 0 5px, transparent 6px),
+      radial-gradient(circle at 28% 40%, rgba(140,190,110,0.55) 0 4px, transparent 5px),
+      radial-gradient(circle at 46% 60%, rgba(200,150,80,0.5) 0 3px, transparent 4px),
+      radial-gradient(circle at 63% 35%, rgba(140,190,110,0.6) 0 5px, transparent 6px),
+      radial-gradient(circle at 80% 55%, rgba(200,150,80,0.5) 0 4px, transparent 5px),
+      radial-gradient(circle at 93% 40%, rgba(140,190,110,0.55) 0 3px, transparent 4px),
+      var(--sage);
+  }
+  .app{ max-width: 1180px; margin: 0 auto; padding: 28px 20px 48px; }
+  header{ margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+  .eyebrow{ font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); margin: 0 0 8px; }
+  h1{ font-family: 'Poppins', sans-serif; font-size: 30px; font-weight: 700; margin: 0 0 10px; letter-spacing: -0.01em; }
+  header p{ max-width: 760px; color: var(--text-dim); font-size: 14.5px; line-height: 1.55; margin: 0; }
+  header p strong{ color: var(--text); font-weight: 600; }
+
+  .panel{ background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+
+  .globals{ display:grid; grid-template-columns: 1fr 1fr auto; gap: 22px; align-items:end; margin-bottom: 16px; }
+  @media (max-width: 720px){ .globals{ grid-template-columns: 1fr; } }
+  label{ display:block; font-size: 12.5px; color: var(--text-dim); margin-bottom: 4px; }
+  .valline{ display:flex; justify-content: space-between; align-items:baseline; font-size: 12.5px; color: var(--text-dim); margin-bottom: 3px; }
+  .valline span.num{ font-family: 'IBM Plex Mono', monospace; color: var(--text); font-size: 13px; }
+  .ratio-box{ font-family:'IBM Plex Mono',monospace; font-size:12px; color: var(--text-dim); background: rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:8px; padding:10px 12px; min-width: 220px; }
+  .ratio-box b{ color: var(--gold); }
+
+  input[type=range]{ -webkit-appearance: none; width: 100%; height: 22px; background: transparent; cursor: pointer; }
+  input[type=range]::-webkit-slider-runnable-track{ height: 3px; background: rgba(255,255,255,0.18); border-radius: 2px; }
+  input[type=range]::-webkit-slider-thumb{ -webkit-appearance: none; margin-top: -6.5px; width: 16px; height: 16px; border-radius: 50%; background: var(--gold); border: 2px solid #16261C; box-shadow: 0 0 0 3px rgba(240,197,92,0.15); }
+  input[type=range]::-moz-range-track{ height:3px; background: rgba(255,255,255,0.18); border-radius:2px; }
+  input[type=range]::-moz-range-thumb{ width:14px; height:14px; border-radius:50%; background: var(--gold); border: 2px solid #16261C; }
+  #vzebra::-webkit-slider-thumb{ background: var(--p1); box-shadow: 0 0 0 3px rgba(217,164,65,0.18); }
+  #vzebra::-moz-range-thumb{ background: var(--p1); }
+  #vlion::-webkit-slider-thumb{ background: var(--p2); box-shadow: 0 0 0 3px rgba(79,168,138,0.18); }
+  #vlion::-moz-range-thumb{ background: var(--p2); }
+
+  input[type=range]:focus-visible, button:focus-visible, input[type=checkbox]:focus-visible{ outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .tabs{ display:flex; gap:8px; margin-bottom: 16px; }
+  .tab{ flex:1; text-align:center; padding: 11px 14px; border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,0.03); font-family:'Poppins',sans-serif; font-weight:600; font-size: 13.5px; color: var(--text-dim); cursor:pointer; transition: all .15s ease; }
+  .tab.active{ background: var(--gold); color:#16261C; border-color: transparent; }
+  .tab:not(.active):hover{ background: rgba(255,255,255,0.08); color: var(--text); }
+
+  .layout{ display:grid; grid-template-columns: 300px 1fr; gap:20px; }
+  @media (max-width: 900px){ .layout{ grid-template-columns: 1fr; } }
+
+  .mode-panel{ display:none; }
+  .mode-panel.active{ display:block; }
+  .hint{ font-size: 12.5px; color: var(--text-dim); line-height:1.5; margin-bottom: 14px; }
+
+  button{ font-family:'Poppins',sans-serif; font-weight:600; font-size:13px; border-radius:7px; border:1px solid var(--border); background: rgba(255,255,255,0.04); color: var(--text); padding: 9px 12px; cursor:pointer; transition: background .15s ease; width:100%; }
+  button:hover{ background: rgba(255,255,255,0.09); }
+  button:disabled{ opacity:0.4; cursor:not-allowed; }
+  button + button{ margin-top: 8px; }
+  .run-btn{ background: var(--gold); color:#16261C; border-color: transparent; }
+  .run-btn:hover{ background: #F5D485; }
+  .opt-btn{ background: rgba(240,197,92,0.12); border-color: rgba(240,197,92,0.4); color: var(--gold); }
+  .opt-btn:hover{ background: rgba(240,197,92,0.2); }
+  .reset-btn{ background: transparent; color: var(--text-dim); }
+
+  .check-row{ display:flex; align-items:center; gap:8px; margin: 12px 0 4px; font-size:12.5px; color: var(--text-dim); }
+  .check-row input{ width:15px; height:15px; }
+
+  .viz{ display:flex; flex-direction:column; gap:14px; }
+  .banner{ font-family:'Poppins',sans-serif; font-size:14.5px; font-weight:600; padding: 12px 16px; border-radius: 8px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); min-height: 20px; }
+  .banner.win1{ color: var(--p1); border-color: rgba(217,164,65,0.4); }
+  .banner.win2{ color: var(--p2); border-color: rgba(79,168,138,0.4); }
+  .banner.neutral{ color: var(--gold); border-color: rgba(240,197,92,0.4); }
+
+  .canvas-wrap{ position: relative; display:flex; justify-content:center; }
+  canvas{ touch-action: none; border-radius: 8px; cursor: crosshair; }
+
+  .legend{ display:flex; gap: 18px; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size: 11.5px; color: var(--text-dim); margin-top: 4px; }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .legend i{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .legend .z i{ background: var(--p1); }
+  .legend .l i{ background: var(--p2); }
+  .legend .g i{ background: var(--gold); border-radius:2px; }
+</style>
+</head>
+<body>
+<div class="slide-frame">
+  <div class="slide-frame-inner">
+
+  <header>
+    <p class="eyebrow">Lecture 2 · Noncooperative Games — Interactive Demo</p>
+    <h1>Zebra in the Lake</h1>
+    <p>The zebra starts at the center of a circular lake and swims at speed <strong style="color:var(--p1)">v_zebra</strong>.
+      The lion is confined to the shore and moves along it at speed <strong style="color:var(--p2)">v_lion</strong>,
+      always turning to chase the zebra's current bearing. The lion can only catch the zebra the instant it reaches the shore.
+      Draw a path for the zebra, control it live, or watch the theoretically optimal escape strategy.</p>
+  </header>
+
+  <div class="panel globals">
+    <div>
+      <div class="valline"><span>v_zebra</span><span class="num" id="vzVal">0.15 R/s</span></div>
+      <input type="range" id="vzebra" min="0.05" max="0.5" step="0.01" value="0.15">
+    </div>
+    <div>
+      <div class="valline"><span>v_lion</span><span class="num" id="vlVal">0.30 R/s</span></div>
+      <input type="range" id="vlion" min="0.05" max="1.0" step="0.01" value="0.30">
+    </div>
+    <div class="ratio-box" id="ratioBox">ratio v_lion/v_zebra = <b>2.00</b></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" id="tabDraw">Draw a path</div>
+    <div class="tab" id="tabLive">Live control</div>
+  </div>
+
+  <div class="layout">
+    <div class="panel controls">
+
+      <div class="mode-panel active" id="drawPanel">
+        <p class="hint">Click and drag inside the lake, starting near the center, to draw the zebra's escape path. Release to finish, then press Run.</p>
+        <button class="run-btn" id="runDrawn" disabled>▶ Run this path</button>
+        <button id="clearDrawn">Clear path</button>
+      </div>
+
+      <div class="mode-panel" id="livePanel">
+        <p class="hint">Press Start, then move your mouse (or finger) inside the lake — the zebra will follow your cursor at its max speed. Reach the shore before the lion gets there.</p>
+        <button class="run-btn" id="startLive">▶ Start</button>
+        <button id="stopLive" disabled>Stop</button>
+      </div>
+
+      <button class="opt-btn" id="runOptimal" style="margin-top:14px;">🦓 Run optimal strategy</button>
+      <button class="reset-btn" id="resetAll">Reset scene</button>
+    </div>
+
+    <div class="viz">
+      <div class="banner neutral" id="banner">Choose a mode and go.</div>
+      <div class="panel">
+        <div class="canvas-wrap"><canvas id="lake" width="560" height="560" style="width:560px;height:560px;"></canvas></div>
+        <div class="legend">
+          <span class="z"><i></i>zebra</span>
+          <span class="l"><i></i>lion (shore only)</span>
+          <span class="g"><i></i>optimal path</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+  <div class="slide-stripe"></div>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const els = {
+    vzebra: $('vzebra'), vlion: $('vlion'), vzVal: $('vzVal'), vlVal: $('vlVal'), ratioBox: $('ratioBox'),
+    tabDraw: $('tabDraw'), tabLive: $('tabLive'), drawPanel: $('drawPanel'), livePanel: $('livePanel'),
+    runDrawn: $('runDrawn'), clearDrawn: $('clearDrawn'),
+    startLive: $('startLive'), stopLive: $('stopLive'),
+    runOptimal: $('runOptimal'), resetAll: $('resetAll'),
+    banner: $('banner'), canvas: $('lake'),
+  };
+  const ctx = els.canvas.getContext('2d');
+
+  // ---- geometry constants (logical CSS pixels) ----
+  const LOGICAL = 560, CX = 280, CY = 280, PXR = 220;
+  const dpr = window.devicePixelRatio || 1;
+  els.canvas.width = LOGICAL*dpr; els.canvas.height = LOGICAL*dpr;
+  ctx.scale(dpr, dpr);
+
+  const CAPTURE_HALF_ANGLE = 8 * Math.PI/180;
+  const LION_START_ANGLE = -Math.PI/2; // top of the lake
+
+  function normAngle(a){ while(a>Math.PI) a-=2*Math.PI; while(a<-Math.PI) a+=2*Math.PI; return a; }
+  function clamp(x,lo,hi){ return Math.max(lo, Math.min(hi, x)); }
+  function toPx(x,y){ return { x: CX + x*PXR, y: CY + y*PXR }; }
+  function fromPx(px,py){ return { x: (px-CX)/PXR, y: (py-CY)/PXR }; }
+
+  let mode = 'draw';
+  let params = { vz: 0.15, vl: 0.30 };
+
+  let zebra = { x:0, y:0 };
+  let lionAngle = LION_START_ANGLE;
+  let zebraTrail = [];
+  let lionTrail = [ LION_START_ANGLE ];
+  let optimalPath = null;
+  let outcome = null;
+
+  let drawnPath = null;   // array of {x,y} recorded during drawing
+  let isDrawing = false;
+
+  let rafId = null;
+  let liveActive = false;
+  let pointerNorm = null;
+
+  function readParams(){
+    params.vz = parseFloat(els.vzebra.value);
+    params.vl = parseFloat(els.vlion.value);
+    els.vzVal.textContent = params.vz.toFixed(2) + ' R/s';
+    els.vlVal.textContent = params.vl.toFixed(2) + ' R/s';
+    const k = params.vl/params.vz;
+    const guaranteed = k < (Math.PI+1);
+    els.ratioBox.innerHTML = `ratio v_lion/v_zebra = <b>${k.toFixed(2)}</b><br><span style="color:${guaranteed?'#4FA88A':'#C9603F'}">${guaranteed ? 'optimal strategy below guarantees escape (< π+1 ≈ 4.14)' : 'above π+1 ≈ 4.14 — not guaranteed by this simple strategy'}</span>`;
+  }
+
+  function stepLion(angle, target, vLion, dt){
+    const r = Math.hypot(target.x, target.y);
+    if(r < 0.02) return angle;
+    const bearing = Math.atan2(target.y, target.x);
+    const diff = normAngle(bearing - angle);
+    const maxStep = vLion*dt;
+    return angle + clamp(diff, -maxStep, maxStep);
+  }
+
+  function checkShore(pos, angle){
+    const r = Math.hypot(pos.x, pos.y);
+    if(r < 1) return null;
+    const landing = Math.atan2(pos.y, pos.x);
+    const gap = Math.abs(normAngle(landing - angle));
+    return gap <= CAPTURE_HALF_ANGLE ? 'caught' : 'escaped';
+  }
+
+  // ---------- optimal strategy controller ----------
+  function makeOptimalState(startLionAngle){
+    return { r: 0, angle: normAngle(startLionAngle + Math.PI), phase: 1 };
+  }
+  function optimalStep(state, lionAngleNow, vz, vl, dt){
+    const r1 = Math.min(1, vz/vl);
+    if(state.phase === 1 && state.r < r1){
+      const desired = normAngle(lionAngleNow + Math.PI);
+      const err = normAngle(desired - state.angle);
+      const rFloor = Math.max(state.r, 0.02);
+      const omegaMax = vz/rFloor;
+      const angleStep = clamp(err, -omegaMax*dt, omegaMax*dt);
+      state.angle = normAngle(state.angle + angleStep);
+      const tangentialUsed = rFloor*Math.abs(angleStep)/dt;
+      const remain = Math.max(vz*vz - tangentialUsed*tangentialUsed, 0);
+      const radial = Math.sqrt(remain);
+      state.r = Math.min(r1, state.r + radial*dt);
+    } else {
+      state.phase = 2;
+      state.r = Math.min(1, state.r + vz*dt);
+    }
+    return { x: state.r*Math.cos(state.angle), y: state.r*Math.sin(state.angle) };
+  }
+
+  function precomputeOptimalRun(vz, vl, startLionAngle){
+    let st = makeOptimalState(startLionAngle);
+    let la = startLionAngle;
+    const zPts = [{x:0,y:0}];
+    const lAngles = [startLionAngle];
+    const dt = 0.02;
+    let res = null;
+    for(let i=0;i<3000;i++){
+      const pos = optimalStep(st, la, vz, vl, dt);
+      zPts.push({x:pos.x,y:pos.y});
+      la = stepLion(la, pos, vl, dt);
+      lAngles.push(la);
+      if(Math.hypot(pos.x,pos.y) >= 1){ res = checkShore(pos, la); break; }
+    }
+    return { zPts, lAngles, dt, outcome: res };
+  }
+
+  function interpArray(arr, idxFloat, isAngle){
+    const last = arr.length-1;
+    const i0 = Math.max(0, Math.min(Math.floor(idxFloat), last));
+    const i1 = Math.min(i0+1, last);
+    const frac = idxFloat - i0;
+    const a = arr[i0], b = arr[i1];
+    if(isAngle) return a + normAngle(b-a)*frac;
+    return { x: a.x+(b.x-a.x)*frac, y: a.y+(b.y-a.y)*frac };
+  }
+
+  // ---------- drawing ----------
+  function drawScene(){
+    ctx.clearRect(0,0,LOGICAL,LOGICAL);
+
+    // lake
+    ctx.beginPath();
+    ctx.arc(CX,CY,PXR,0,Math.PI*2);
+    ctx.fillStyle = 'rgba(147,198,112,0.08)';
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(157,187,148,0.35)';
+    ctx.stroke();
+
+    // capture wedge around lion
+    ctx.beginPath();
+    ctx.arc(CX,CY,PXR, lionAngle-CAPTURE_HALF_ANGLE, lionAngle+CAPTURE_HALF_ANGLE);
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = 'rgba(79,168,138,0.25)';
+    ctx.stroke();
+
+    // optimal path (shown in full once computed, like a drawn path)
+    if(optimalPath){
+      ctx.beginPath();
+      optimalPath.forEach((p,i)=>{
+        const px = toPx(p.x,p.y);
+        if(i===0) ctx.moveTo(px.x,px.y); else ctx.lineTo(px.x,px.y);
+      });
+      ctx.setLineDash([5,5]);
+      ctx.lineWidth = 1.6;
+      ctx.strokeStyle = 'rgba(240,197,92,0.55)';
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // drawn path (preview or committed)
+    if(drawnPath && drawnPath.length>1){
+      ctx.beginPath();
+      drawnPath.forEach((p,i)=>{
+        const px = toPx(p.x,p.y);
+        if(i===0) ctx.moveTo(px.x,px.y); else ctx.lineTo(px.x,px.y);
+      });
+      ctx.lineWidth = 1.6;
+      ctx.strokeStyle = 'rgba(217,164,65,0.4)';
+      ctx.stroke();
+    }
+
+    // zebra trail
+    if(zebraTrail.length>1){
+      ctx.beginPath();
+      zebraTrail.forEach((p,i)=>{
+        const px = toPx(p.x,p.y);
+        if(i===0) ctx.moveTo(px.x,px.y); else ctx.lineTo(px.x,px.y);
+      });
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = '#D9A441';
+      ctx.stroke();
+    }
+
+    // lion trail (arc along shore)
+    if(lionTrail.length>1){
+      ctx.beginPath();
+      let started=false;
+      lionTrail.forEach(a=>{
+        const px = CX+Math.cos(a)*PXR, py = CY+Math.sin(a)*PXR;
+        if(!started){ ctx.moveTo(px,py); started=true; } else ctx.lineTo(px,py);
+      });
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#4FA88A';
+      ctx.stroke();
+    }
+
+    // center marker
+    ctx.beginPath();
+    ctx.arc(CX,CY,3,0,Math.PI*2);
+    ctx.fillStyle = 'rgba(242,247,237,0.5)';
+    ctx.fill();
+
+    // zebra
+    const zp = toPx(zebra.x, zebra.y);
+    ctx.beginPath();
+    ctx.arc(zp.x, zp.y, 8, 0, Math.PI*2);
+    ctx.fillStyle = '#D9A441';
+    ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#16261C'; ctx.stroke();
+
+    // lion
+    const lp = { x: CX+Math.cos(lionAngle)*PXR, y: CY+Math.sin(lionAngle)*PXR };
+    ctx.beginPath();
+    ctx.arc(lp.x, lp.y, 9, 0, Math.PI*2);
+    ctx.fillStyle = '#4FA88A';
+    ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#16261C'; ctx.stroke();
+  }
+
+  function setBanner(text, cls){ els.banner.textContent = text; els.banner.className = 'banner ' + cls; }
+
+  // ---------- run loops ----------
+  function cancelLoop(){ if(rafId){ cancelAnimationFrame(rafId); rafId=null; } }
+
+  function resetPositions(){
+    zebra = {x:0,y:0};
+    lionAngle = LION_START_ANGLE;
+    zebraTrail = [{x:0,y:0}];
+    lionTrail = [LION_START_ANGLE];
+    outcome = null;
+  }
+
+  function finish(res){
+    outcome = res;
+    if(res==='caught') setBanner('🦁 The lion is right there — caught!', 'win2');
+    else if(res==='escaped') setBanner('🦓 The zebra reaches the shore clear of the lion — escaped!', 'win1');
+    drawScene();
+  }
+
+  // --- run a precomputed path (arc-length parameterized) ---
+  function pathAtDistance(path, dist){
+    let acc = 0;
+    for(let i=1;i<path.length;i++){
+      const a=path[i-1], b=path[i];
+      const seg = Math.hypot(b.x-a.x, b.y-a.y);
+      if(acc+seg >= dist){
+        const t = seg===0 ? 0 : (dist-acc)/seg;
+        return { x: a.x+(b.x-a.x)*t, y: a.y+(b.y-a.y)*t };
+      }
+      acc += seg;
+    }
+    // extend straight beyond the drawn path in its final direction
+    const a = path[path.length-2] || {x:0,y:0}, b = path[path.length-1];
+    const dx=b.x-a.x, dy=b.y-a.y;
+    const len=Math.hypot(dx,dy)||1;
+    const extra = dist-acc;
+    return { x: b.x + (dx/len)*extra, y: b.y + (dy/len)*extra };
+  }
+
+  function runDrawnPath(){
+    if(!drawnPath || drawnPath.length<2) return;
+    resetPositions();
+    cancelLoop();
+    setBanner('Running the drawn path…', 'neutral');
+    let t0 = null, dist = 0;
+    function frame(now){
+      if(t0===null) t0=now;
+      const dt = Math.min((now - (frame.last||now))/1000, 0.05);
+      frame.last = now;
+      dist += params.vz*dt;
+      zebra = pathAtDistance(drawnPath, dist);
+      zebraTrail.push({...zebra});
+      lionAngle = stepLion(lionAngle, zebra, params.vl, dt);
+      lionTrail.push(lionAngle);
+      drawScene();
+      const res = checkShore(zebra, lionAngle);
+      if(res){ finish(res); return; }
+      rafId = requestAnimationFrame(frame);
+    }
+    rafId = requestAnimationFrame(frame);
+  }
+
+  // --- live control ---
+  function startLiveRun(){
+    resetPositions();
+    cancelLoop();
+    pointerNorm = null;
+    liveActive = true;
+    els.startLive.disabled = true; els.stopLive.disabled = false;
+    setBanner('Guide the zebra with your cursor…', 'neutral');
+    let last = null;
+    function frame(now){
+      if(last===null) last=now;
+      const dt = Math.min((now-last)/1000, 0.05);
+      last = now;
+      if(pointerNorm){
+        const dx = pointerNorm.x - zebra.x, dy = pointerNorm.y - zebra.y;
+        const dist = Math.hypot(dx,dy);
+        const step = params.vz*dt;
+        if(dist > 1e-6){
+          const m = Math.min(step, dist)/dist;
+          zebra = { x: zebra.x+dx*m, y: zebra.y+dy*m };
+        }
+      }
+      zebraTrail.push({...zebra});
+      lionAngle = stepLion(lionAngle, zebra, params.vl, dt);
+      lionTrail.push(lionAngle);
+      drawScene();
+      const res = checkShore(zebra, lionAngle);
+      if(res){ stopLiveRun(); finish(res); return; }
+      rafId = requestAnimationFrame(frame);
+    }
+    rafId = requestAnimationFrame(frame);
+  }
+  function stopLiveRun(){
+    liveActive = false;
+    cancelLoop();
+    els.startLive.disabled = false; els.stopLive.disabled = true;
+  }
+
+  // --- optimal strategy run ---
+  function runOptimalStrategy(){
+    resetPositions();
+    cancelLoop();
+    const pre = precomputeOptimalRun(params.vz, params.vl, LION_START_ANGLE);
+    optimalPath = pre.zPts;
+    drawScene();
+    setBanner('Optimal path plotted — watch it play out…', 'neutral');
+    const lastIdx = pre.zPts.length - 1;
+    let start = null;
+    function frame(now){
+      if(start===null) start = now;
+      const elapsedSec = (now-start)/1000;
+      const idxFloat = Math.min(elapsedSec/pre.dt, lastIdx);
+      zebra = interpArray(pre.zPts, idxFloat, false);
+      lionAngle = interpArray(pre.lAngles, idxFloat, true);
+      zebraTrail.push({...zebra});
+      lionTrail.push(lionAngle);
+      drawScene();
+      if(idxFloat >= lastIdx){
+        finish(pre.outcome || checkShore(zebra, lionAngle) || 'escaped');
+        return;
+      }
+      rafId = requestAnimationFrame(frame);
+    }
+    rafId = requestAnimationFrame(frame);
+  }
+
+  // ---------- pointer handling for draw + live ----------
+  function canvasPos(evt){
+    const rect = els.canvas.getBoundingClientRect();
+    const cx = (evt.touches ? evt.touches[0].clientX : evt.clientX) - rect.left;
+    const cy = (evt.touches ? evt.touches[0].clientY : evt.clientY) - rect.top;
+    return fromPx(cx*(LOGICAL/rect.width), cy*(LOGICAL/rect.height));
+  }
+
+  els.canvas.addEventListener('pointerdown', (e)=>{
+    if(mode!=='draw' || rafId) return;
+    isDrawing = true;
+    resetPositions();
+    const p = canvasPos(e);
+    const r = Math.hypot(p.x,p.y);
+    const clipped = r>1 ? {x:p.x/r, y:p.y/r} : p;
+    drawnPath = [{x:0,y:0}, clipped];
+    els.runDrawn.disabled = true;
+    drawScene();
+  });
+  els.canvas.addEventListener('pointermove', (e)=>{
+    if(mode==='draw' && isDrawing){
+      const p = canvasPos(e);
+      const r = Math.hypot(p.x,p.y);
+      const clipped = r>1 ? {x:p.x/r, y:p.y/r} : p;
+      drawnPath.push(clipped);
+      drawScene();
+    } else if(mode==='live' && liveActive){
+      const p = canvasPos(e);
+      const r = Math.hypot(p.x,p.y);
+      pointerNorm = r>1 ? {x:p.x/r, y:p.y/r} : p;
+    }
+  });
+  window.addEventListener('pointerup', ()=>{
+    if(isDrawing){
+      isDrawing = false;
+      if(drawnPath && drawnPath.length>2) els.runDrawn.disabled = false;
+    }
+  });
+
+  // ---------- wiring ----------
+  function switchMode(m){
+    mode = m;
+    els.tabDraw.classList.toggle('active', m==='draw');
+    els.tabLive.classList.toggle('active', m==='live');
+    els.drawPanel.classList.toggle('active', m==='draw');
+    els.livePanel.classList.toggle('active', m==='live');
+    stopLiveRun();
+    cancelLoop();
+    resetPositions();
+    drawnPath = null; els.runDrawn.disabled = true;
+    optimalPath = null;
+    setBanner(m==='draw' ? 'Click and drag from the center to draw a path.' : 'Press Start, then move your cursor inside the lake.', 'neutral');
+    drawScene();
+  }
+
+  els.vzebra.addEventListener('input', readParams);
+  els.vlion.addEventListener('input', readParams);
+
+  els.tabDraw.addEventListener('click', ()=>switchMode('draw'));
+  els.tabLive.addEventListener('click', ()=>switchMode('live'));
+
+  els.runDrawn.addEventListener('click', runDrawnPath);
+  els.clearDrawn.addEventListener('click', ()=>{ drawnPath=null; els.runDrawn.disabled=true; resetPositions(); drawScene(); setBanner('Path cleared. Draw a new one.', 'neutral'); });
+
+  els.startLive.addEventListener('click', startLiveRun);
+  els.stopLive.addEventListener('click', ()=>{ stopLiveRun(); setBanner('Stopped.', 'neutral'); drawScene(); });
+
+  els.runOptimal.addEventListener('click', runOptimalStrategy);
+  els.resetAll.addEventListener('click', ()=>{ cancelLoop(); stopLiveRun(); resetPositions(); drawnPath=null; els.runDrawn.disabled=true; optimalPath=null; setBanner('Scene reset.', 'neutral'); drawScene(); });
+
+  // init
+  readParams();
+  resetPositions();
+  drawScene();
+})();
+</script>
+</body>
+</html>

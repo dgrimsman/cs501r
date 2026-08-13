@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rope Pulling — Noncooperative Games</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg: #FFFFFF;
+    --panel: #1D3326;
+    --panel-2: #16261C;
+    --sage: #93C670;
+    --cream: #F4F6DE;
+    --text-on-cream: #16261C;
+    --grid: rgba(140,180,130,0.14);
+    --grid-strong: rgba(147,198,112,0.28);
+    --border: rgba(157,187,148,0.14);
+    --text: #F2F7ED;
+    --text-dim: #9DBB94;
+    --p1: #D9A441;
+    --p1-dim: rgba(217,164,65,0.18);
+    --p2: #4FA88A;
+    --p2-dim: rgba(79,168,138,0.18);
+    --gold: #F0C55C;
+    --focus: #F0C55C;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text-on-cream);
+    font-family: 'Poppins', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .slide-frame{
+    max-width: 1180px;
+    margin: 28px auto 48px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 18px 50px rgba(29,51,38,0.25);
+    color: var(--text);
+  }
+  .slide-frame-inner{ padding: 34px 32px 26px; }
+  .slide-stripe{
+    height: 26px;
+    background:
+      radial-gradient(circle at 12% 50%, rgba(200,150,80,0.55) 0 5px, transparent 6px),
+      radial-gradient(circle at 28% 40%, rgba(140,190,110,0.55) 0 4px, transparent 5px),
+      radial-gradient(circle at 46% 60%, rgba(200,150,80,0.5) 0 3px, transparent 4px),
+      radial-gradient(circle at 63% 35%, rgba(140,190,110,0.6) 0 5px, transparent 6px),
+      radial-gradient(circle at 80% 55%, rgba(200,150,80,0.5) 0 4px, transparent 5px),
+      radial-gradient(circle at 93% 40%, rgba(140,190,110,0.55) 0 3px, transparent 4px),
+      var(--sage);
+  }
+
+  .app{
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 20px 48px;
+  }
+
+  header{
+    margin-bottom: 22px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .eyebrow{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin: 0 0 8px;
+  }
+
+  h1{
+    font-family: 'Poppins', sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    margin: 0 0 10px;
+    letter-spacing: -0.01em;
+  }
+
+  header p{
+    max-width: 720px;
+    color: var(--text-dim);
+    font-size: 14.5px;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  header p strong{ color: var(--text); font-weight: 600; }
+
+  .layout{
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 860px){
+    .layout{ grid-template-columns: 1fr; }
+  }
+
+  .panel{
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+  }
+
+  .controls > * + *{ margin-top: 14px; }
+
+  .player-block{
+    border-radius: 8px;
+    padding: 14px 14px 16px;
+    border: 1px solid var(--border);
+  }
+  .player-block.p1{ background: var(--p1-dim); border-color: rgba(217,164,65,0.35); }
+  .player-block.p2{ background: var(--p2-dim); border-color: rgba(79,168,138,0.35); }
+
+  .player-title{
+    display:flex; align-items:center; gap:8px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 14.5px;
+    margin-bottom: 10px;
+  }
+  .dot{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .p1 .dot{ background: var(--p1); }
+  .p2 .dot{ background: var(--p2); }
+
+  label{
+    display:block;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+
+  .row{ margin-top: 10px; }
+  .row:first-child{ margin-top: 0; }
+
+  .valline{
+    display:flex; justify-content: space-between; align-items:baseline;
+    font-size: 12.5px; color: var(--text-dim); margin-bottom: 3px;
+  }
+  .valline span.num{
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  input[type=range]{
+    -webkit-appearance: none;
+    width: 100%;
+    height: 22px;
+    background: transparent;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-runnable-track{
+    height: 3px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 2px;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance: none;
+    margin-top: -6.5px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--gold);
+    border: 2px solid #16261C;
+    box-shadow: 0 0 0 3px rgba(240,197,92,0.15);
+  }
+  .p1 input[type=range]::-webkit-slider-thumb{ background: var(--p1); box-shadow: 0 0 0 3px rgba(217,164,65,0.18);}
+  .p2 input[type=range]::-webkit-slider-thumb{ background: var(--p2); box-shadow: 0 0 0 3px rgba(79,168,138,0.18);}
+  input[type=range]::-moz-range-track{ height:3px; background: rgba(255,255,255,0.18); border-radius:2px; }
+  input[type=range]::-moz-range-thumb{
+    width:14px; height:14px; border-radius:50%; background: var(--gold); border: 2px solid #16261C;
+  }
+  .p1 input[type=range]::-moz-range-thumb{ background: var(--p1); }
+  .p2 input[type=range]::-moz-range-thumb{ background: var(--p2); }
+
+  input[type=range]:focus-visible,
+  select:focus-visible,
+  button:focus-visible{
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  select{
+    width: 100%;
+    background: rgba(0,0,0,0.25);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+  }
+
+  .global-block{ padding-top: 2px; }
+
+  .buttons{
+    display:flex; gap:8px; margin-top: 14px;
+  }
+  button{
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.04);
+    color: var(--text);
+    padding: 9px 12px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  button:hover{ background: rgba(255,255,255,0.09); }
+  #runBtn{
+    background: var(--gold);
+    color: #16261C;
+    border-color: transparent;
+    flex: 1;
+  }
+  #runBtn:hover{ background: #F5D485; }
+  #resetBtn{ flex: none; }
+
+  .presets{
+    display:flex; flex-direction: column; gap: 6px; margin-top: 12px;
+  }
+  .presets button{
+    background: transparent;
+    text-align: left;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    padding: 7px 10px;
+  }
+  .presets button:hover{ color: var(--text); background: rgba(255,255,255,0.06); }
+
+  .viz{ display:flex; flex-direction: column; gap: 14px; }
+
+  .plot-wrap{
+    position: relative;
+    background: radial-gradient(circle at 50% 42%, rgba(140,180,130,0.06), transparent 65%), var(--panel-2);
+  }
+
+  svg#plot{ width: 100%; height: auto; display:block; }
+
+  .caption{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--text-dim);
+    text-align: center;
+    padding: 8px 10px 14px;
+    opacity: 0.75;
+  }
+
+  .readout{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  @media (max-width: 560px){ .readout{ grid-template-columns: repeat(2, 1fr); } }
+
+  .stat{
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .stat .k{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+  .stat .v{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 20px;
+    font-weight: 500;
+  }
+  .stat.j1 .v{ color: var(--p1); }
+  .stat.j2 .v{ color: var(--p2); }
+
+  .tlabel{ font-family:'Poppins',sans-serif; font-size: 11px; font-weight:600; }
+</style>
+</head>
+<body>
+<div class="slide-frame">
+  <div class="slide-frame-inner">
+
+  <header>
+    <p class="eyebrow">Lecture 2 · Noncooperative Games — Interactive Demo</p>
+    <h1>Rope Pulling</h1>
+    <p>A 1&nbsp;kg point mass starts at rest at the origin. <strong style="color:var(--p1)">Player&nbsp;1</strong> and
+      <strong style="color:var(--p2)">Player&nbsp;2</strong> each pull with a constant force for <strong>T</strong> seconds.
+      Set each player's force, angle, and cost function, then run the simulation to see where the mass ends up —
+      and who "wins" under each player's own cost.</p>
+  </header>
+
+  <div class="layout">
+
+    <div class="panel controls">
+
+      <div class="player-block p1">
+        <div class="player-title"><span class="dot"></span>Player 1</div>
+
+        <div class="row">
+          <div class="valline"><span>force |f₁|</span><span class="num" id="f1val">1.0 N</span></div>
+          <input type="range" id="f1" min="0" max="5" step="0.1" value="1">
+        </div>
+        <div class="row">
+          <div class="valline"><span>angle θ₁</span><span class="num" id="theta1val">120°</span></div>
+          <input type="range" id="theta1" min="0" max="360" step="1" value="120">
+        </div>
+        <div class="row">
+          <label for="cost1">cost function J₁</label>
+          <select id="cost1">
+            <option value="negX">−x(T)</option>
+            <option value="posX">x(T)</option>
+            <option value="negY">−y(T)</option>
+            <option value="posY">y(T)</option>
+            <option value="sumSq">x(T)² + y(T)²</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="player-block p2">
+        <div class="player-title"><span class="dot"></span>Player 2</div>
+
+        <div class="row">
+          <div class="valline"><span>force |f₂|</span><span class="num" id="f2val">1.0 N</span></div>
+          <input type="range" id="f2" min="0" max="5" step="0.1" value="1">
+        </div>
+        <div class="row">
+          <div class="valline"><span>angle θ₂</span><span class="num" id="theta2val">60°</span></div>
+          <input type="range" id="theta2" min="0" max="360" step="1" value="60">
+        </div>
+        <div class="row">
+          <label for="cost2">cost function J₂</label>
+          <select id="cost2">
+            <option value="negX">−x(T)</option>
+            <option value="posX" selected>x(T)</option>
+            <option value="negY">−y(T)</option>
+            <option value="posY">y(T)</option>
+            <option value="sumSq">x(T)² + y(T)²</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="global-block">
+        <div class="row">
+          <div class="valline"><span>simulation time T</span><span class="num" id="Tval">1.00 s</span></div>
+          <input type="range" id="T" min="0.1" max="3" step="0.05" value="1">
+        </div>
+        <div class="buttons">
+          <button id="runBtn">▶ Run simulation</button>
+          <button id="resetBtn">Reset</button>
+        </div>
+        <div class="presets">
+          <button id="presetZero">Load: Zero-sum example (J₁=−x, J₂=x)</button>
+          <button id="presetNon">Load: Non-zero-sum example (J₁=−x, J₂=−y)</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="viz">
+      <div class="panel plot-wrap">
+        <svg id="plot" viewBox="0 0 600 560" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrowP1" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+              <path d="M0,0 L8,4 L0,8 Z" fill="var(--p1)"></path>
+            </marker>
+            <marker id="arrowP2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+              <path d="M0,0 L8,4 L0,8 Z" fill="var(--p2)"></path>
+            </marker>
+            <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="3.2" result="blur"></feGaussianBlur>
+              <feMerge>
+                <feMergeNode in="blur"></feMergeNode>
+                <feMergeNode in="SourceGraphic"></feMergeNode>
+              </feMerge>
+            </filter>
+          </defs>
+          <g id="gridLayer"></g>
+          <g id="axesLayer"></g>
+          <g id="compassLayer"></g>
+          <g id="trajLayer"></g>
+        </svg>
+        <div class="caption">force vectors near the origin are shown schematically (direction + relative magnitude only) — position axes are auto-scaled in meters</div>
+      </div>
+
+      <div class="readout">
+        <div class="stat"><div class="k">x(T)</div><div class="v" id="xTval">0.00 m</div></div>
+        <div class="stat"><div class="k">y(T)</div><div class="v" id="yTval">0.00 m</div></div>
+        <div class="stat j1"><div class="k">J₁ = <span id="j1formula">−x(T)</span></div><div class="v" id="j1val">0.00</div></div>
+        <div class="stat j2"><div class="k">J₂ = <span id="j2formula">x(T)</span></div><div class="v" id="j2val">0.00</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+  <div class="slide-stripe"></div>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const svgNS = "http://www.w3.org/2000/svg";
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const els = {
+    f1: $('f1'), theta1: $('theta1'), cost1: $('cost1'),
+    f2: $('f2'), theta2: $('theta2'), cost2: $('cost2'),
+    T: $('T'),
+    f1val: $('f1val'), theta1val: $('theta1val'),
+    f2val: $('f2val'), theta2val: $('theta2val'),
+    Tval: $('Tval'),
+    xTval: $('xTval'), yTval: $('yTval'),
+    j1val: $('j1val'), j2val: $('j2val'),
+    j1formula: $('j1formula'), j2formula: $('j2formula'),
+    runBtn: $('runBtn'), resetBtn: $('resetBtn'),
+    presetZero: $('presetZero'), presetNon: $('presetNon'),
+    gridLayer: $('gridLayer'), axesLayer: $('axesLayer'),
+    compassLayer: $('compassLayer'), trajLayer: $('trajLayer'),
+  };
+
+  const costFns = {
+    negX: (x,y) => -x,
+    posX: (x,y) => x,
+    negY: (x,y) => -y,
+    posY: (x,y) => y,
+    sumSq: (x,y) => x*x + y*y,
+  };
+  const costLabels = { negX: '−x(T)', posX: 'x(T)', negY: '−y(T)', posY: 'y(T)', sumSq: 'x(T)²+y(T)²' };
+
+  const CX = 300, CY = 300, PLOT_R = 220;
+
+  let animFrame = null;
+
+  function el(tag, attrs){
+    const e = document.createElementNS(svgNS, tag);
+    for(const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  function clear(g){ while(g.firstChild) g.removeChild(g.firstChild); }
+
+  function niceNum(range, round){
+    const exponent = Math.floor(Math.log10(range));
+    const fraction = range / Math.pow(10, exponent);
+    let nf;
+    if(round){
+      if(fraction < 1.5) nf = 1;
+      else if(fraction < 3) nf = 2;
+      else if(fraction < 7) nf = 5;
+      else nf = 10;
+    } else {
+      if(fraction <= 1) nf = 1;
+      else if(fraction <= 2) nf = 2;
+      else if(fraction <= 5) nf = 5;
+      else nf = 10;
+    }
+    return nf * Math.pow(10, exponent);
+  }
+
+  // math angle: CCW from +x axis, y-up. Convert to SVG screen point (y flipped).
+  function polar(cx, cy, r, angleDeg){
+    const rad = angleDeg * Math.PI / 180;
+    return { x: cx + r*Math.cos(rad), y: cy - r*Math.sin(rad) };
+  }
+
+  function describeArc(cx, cy, r, startDeg, endDeg){
+    let a0 = ((startDeg % 360) + 360) % 360;
+    let a1 = ((endDeg % 360) + 360) % 360;
+    let sweep = a1 - a0;
+    if(sweep < 0) sweep += 360;
+    const p0 = polar(cx, cy, r, a0);
+    const p1 = polar(cx, cy, r, a0 + sweep);
+    const largeArc = sweep > 180 ? 1 : 0;
+    return `M ${p0.x.toFixed(2)} ${p0.y.toFixed(2)} A ${r} ${r} 0 ${largeArc} 0 ${p1.x.toFixed(2)} ${p1.y.toFixed(2)}`;
+  }
+
+  function readState(){
+    const f1 = parseFloat(els.f1.value);
+    const theta1 = parseFloat(els.theta1.value);
+    const f2 = parseFloat(els.f2.value);
+    const theta2 = parseFloat(els.theta2.value);
+    const T = parseFloat(els.T.value);
+    const c1 = els.cost1.value;
+    const c2 = els.cost2.value;
+
+    const a1 = theta1 * Math.PI/180, a2 = theta2 * Math.PI/180;
+    const ax = f1*Math.cos(a1) + f2*Math.cos(a2);
+    const ay = f1*Math.sin(a1) + f2*Math.sin(a2);
+    const xT = 0.5*ax*T*T;
+    const yT = 0.5*ay*T*T;
+    const j1 = costFns[c1](xT, yT);
+    const j2 = costFns[c2](xT, yT);
+
+    return {f1, theta1, f2, theta2, T, c1, c2, ax, ay, xT, yT, j1, j2};
+  }
+
+  function updateLabels(s){
+    els.f1val.textContent = s.f1.toFixed(1) + ' N';
+    els.theta1val.textContent = Math.round(s.theta1) + '°';
+    els.f2val.textContent = s.f2.toFixed(1) + ' N';
+    els.theta2val.textContent = Math.round(s.theta2) + '°';
+    els.Tval.textContent = s.T.toFixed(2) + ' s';
+    els.xTval.textContent = s.xT.toFixed(2) + ' m';
+    els.yTval.textContent = s.yT.toFixed(2) + ' m';
+    els.j1val.textContent = s.j1.toFixed(2);
+    els.j2val.textContent = s.j2.toFixed(2);
+    els.j1formula.textContent = costLabels[s.c1];
+    els.j2formula.textContent = costLabels[s.c2];
+  }
+
+  function computeScale(s){
+    const extent = Math.max(Math.abs(s.xT), Math.abs(s.yT));
+    const rawTarget = Math.max(extent*1.35, 0.5);
+    const halfRange = niceNum(rawTarget, true);
+    const pxPerM = PLOT_R / halfRange;
+    return {halfRange, pxPerM};
+  }
+
+  function drawGrid(scale){
+    clear(els.gridLayer);
+    const rings = 4;
+    for(let i=1; i<=rings; i++){
+      const frac = i/rings;
+      const r = PLOT_R * frac;
+      els.gridLayer.appendChild(el('rect', {
+        x: CX-r, y: CY-r, width: r*2, height: r*2,
+        fill: 'none', stroke: 'var(--grid)', 'stroke-width': 1
+      }));
+    }
+  }
+
+  function drawAxes(scale){
+    clear(els.axesLayer);
+    const strong = 'var(--grid-strong)';
+    els.axesLayer.appendChild(el('line', {x1: CX-PLOT_R-14, y1: CY, x2: CX+PLOT_R+14, y2: CY, stroke: strong, 'stroke-width': 1}));
+    els.axesLayer.appendChild(el('line', {x1: CX, y1: CY-PLOT_R-14, x2: CX, y2: CY+PLOT_R+14, stroke: strong, 'stroke-width': 1}));
+
+    const mk = (x,y,text,anchor) => {
+      const t = el('text', {x, y, fill: 'var(--text-dim)', 'font-family':'IBM Plex Mono, monospace', 'font-size': 11, 'text-anchor': anchor||'middle'});
+      t.textContent = text;
+      els.axesLayer.appendChild(t);
+    };
+    mk(CX+PLOT_R+16, CY+4, `+${scale.halfRange}m`, 'start');
+    mk(CX-PLOT_R-16, CY+4, `−${scale.halfRange}m`, 'end');
+    mk(CX+16, CY-PLOT_R-18, `+${scale.halfRange}m`, 'start');
+    mk(CX+16, CY+PLOT_R+22, `−${scale.halfRange}m`, 'start');
+    mk(CX+8, CY+16, '0', 'start');
+
+    const lx = el('text', {x: CX+PLOT_R+16, y: CY-8, fill: 'var(--text-dim)', 'font-family':'Poppins, sans-serif', 'font-size': 12, 'font-weight':600});
+    lx.textContent = 'x';
+    els.axesLayer.appendChild(lx);
+    const ly = el('text', {x: CX+8, y: CY-PLOT_R-16, fill: 'var(--text-dim)', 'font-family':'Poppins, sans-serif', 'font-size': 12, 'font-weight':600});
+    ly.textContent = 'y';
+    els.axesLayer.appendChild(ly);
+  }
+
+  function forceArrowLen(mag){
+    // schematic pixel length, independent of position scale: 34px..100px over 0..5N
+    return 34 + Math.min(mag,5)/5 * 66;
+  }
+
+  function drawCompass(s){
+    clear(els.compassLayer);
+    const arcR = 26;
+
+    // angle arcs from +x axis
+    if(s.theta1 % 360 !== 0){
+      const path1 = describeArc(CX, CY, arcR, 0, s.theta1);
+      els.compassLayer.appendChild(el('path', {d: path1, fill:'none', stroke:'var(--p1)', 'stroke-width':1.4, opacity:0.55}));
+    }
+    if(s.theta2 % 360 !== 0){
+      const path2 = describeArc(CX, CY, arcR+9, 0, s.theta2);
+      els.compassLayer.appendChild(el('path', {d: path2, fill:'none', stroke:'var(--p2)', 'stroke-width':1.4, opacity:0.55}));
+    }
+
+    // force vectors
+    const len1 = forceArrowLen(s.f1);
+    const p1tip = polar(CX, CY, len1, s.theta1);
+    els.compassLayer.appendChild(el('line', {
+      x1: CX, y1: CY, x2: p1tip.x, y2: p1tip.y,
+      stroke: 'var(--p1)', 'stroke-width': 2.6, 'marker-end':'url(#arrowP1)'
+    }));
+    const l1 = el('text', {x: p1tip.x + (p1tip.x>=CX?6:-6), y: p1tip.y - 6, fill:'var(--p1)', 'font-family':'Poppins, sans-serif', 'font-size':12, 'font-weight':700, 'text-anchor': p1tip.x>=CX?'start':'end'});
+    l1.textContent = 'f₁';
+    els.compassLayer.appendChild(l1);
+
+    const len2 = forceArrowLen(s.f2);
+    const p2tip = polar(CX, CY, len2, s.theta2);
+    els.compassLayer.appendChild(el('line', {
+      x1: CX, y1: CY, x2: p2tip.x, y2: p2tip.y,
+      stroke: 'var(--p2)', 'stroke-width': 2.6, 'marker-end':'url(#arrowP2)'
+    }));
+    const l2 = el('text', {x: p2tip.x + (p2tip.x>=CX?6:-6), y: p2tip.y - 6, fill:'var(--p2)', 'font-family':'Poppins, sans-serif', 'font-size':12, 'font-weight':700, 'text-anchor': p2tip.x>=CX?'start':'end'});
+    l2.textContent = 'f₂';
+    els.compassLayer.appendChild(l2);
+
+    // origin / mass marker
+    els.compassLayer.appendChild(el('circle', {cx: CX, cy: CY, r: 4, fill:'var(--text)'}));
+  }
+
+  function worldToScreen(x, y, scale){
+    return { x: CX + x*scale.pxPerM, y: CY - y*scale.pxPerM };
+  }
+
+  function drawTrajectoryGuide(s, scale){
+    clear(els.trajLayer);
+    const end = worldToScreen(s.xT, s.yT, scale);
+    els.trajLayer.appendChild(el('line', {
+      x1: CX, y1: CY, x2: end.x, y2: end.y,
+      stroke: 'var(--gold)', 'stroke-width': 1.4, 'stroke-dasharray': '3 5', opacity: 0.45
+    }));
+    els.trajLayer.appendChild(el('circle', {
+      cx: end.x, cy: end.y, r: 4.5, fill:'none', stroke:'var(--gold)', 'stroke-width': 1.4, opacity: 0.6
+    }));
+
+    // animated comet line + dot, start at origin
+    const comet = el('line', {id:'comet', x1: CX, y1: CY, x2: CX, y2: CY, stroke:'var(--gold)', 'stroke-width': 2.6, filter:'url(#glow)'});
+    const dot = el('circle', {id:'dot', cx: CX, cy: CY, r: 6, fill:'var(--gold)', filter:'url(#glow)'});
+    els.trajLayer.appendChild(comet);
+    els.trajLayer.appendChild(dot);
+  }
+
+  function render(){
+    if(animFrame){ cancelAnimationFrame(animFrame); animFrame = null; }
+    const s = readState();
+    updateLabels(s);
+    const scale = computeScale(s);
+    drawGrid(scale);
+    drawAxes(scale);
+    drawCompass(s);
+    drawTrajectoryGuide(s, scale);
+    return {s, scale};
+  }
+
+  function runSimulation(){
+    const {s, scale} = render();
+    const comet = $('comet');
+    const dot = $('dot');
+    if(!comet || !dot) return;
+
+    if(reduceMotion){
+      const end = worldToScreen(s.xT, s.yT, scale);
+      comet.setAttribute('x2', end.x); comet.setAttribute('y2', end.y);
+      dot.setAttribute('cx', end.x); dot.setAttribute('cy', end.y);
+      return;
+    }
+
+    const wallDuration = 1600; // ms, fixed for legibility regardless of T
+    const start = performance.now();
+
+    function frame(now){
+      const elapsed = now - start;
+      const frac = Math.min(elapsed / wallDuration, 1);
+      const t = frac * s.T;
+      const x = 0.5 * s.ax * t * t;
+      const y = 0.5 * s.ay * t * t;
+      const p = worldToScreen(x, y, scale);
+      comet.setAttribute('x2', p.x); comet.setAttribute('y2', p.y);
+      dot.setAttribute('cx', p.x); dot.setAttribute('cy', p.y);
+
+      if(frac < 1){
+        animFrame = requestAnimationFrame(frame);
+      } else {
+        animFrame = null;
+      }
+    }
+    animFrame = requestAnimationFrame(frame);
+  }
+
+  function setState(vals){
+    if(vals.f1 !== undefined) els.f1.value = vals.f1;
+    if(vals.theta1 !== undefined) els.theta1.value = vals.theta1;
+    if(vals.f2 !== undefined) els.f2.value = vals.f2;
+    if(vals.theta2 !== undefined) els.theta2.value = vals.theta2;
+    if(vals.T !== undefined) els.T.value = vals.T;
+    if(vals.c1 !== undefined) els.cost1.value = vals.c1;
+    if(vals.c2 !== undefined) els.cost2.value = vals.c2;
+    render();
+  }
+
+  [els.f1, els.theta1, els.cost1, els.f2, els.theta2, els.cost2, els.T].forEach(input => {
+    input.addEventListener('input', render);
+  });
+
+  els.runBtn.addEventListener('click', runSimulation);
+  els.resetBtn.addEventListener('click', () => setState({f1:1, theta1:120, f2:1, theta2:60, T:1, c1:'negX', c2:'posX'}));
+  els.presetZero.addEventListener('click', () => setState({c1:'negX', c2:'posX'}));
+  els.presetNon.addEventListener('click', () => setState({c1:'negX', c2:'negY'}));
+
+  render();
+})();
+</script>
+</body>
+</html>
